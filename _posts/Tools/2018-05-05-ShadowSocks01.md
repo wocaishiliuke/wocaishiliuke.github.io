@@ -87,13 +87,13 @@ ssh -i /path/r3.pem ubuntu@ec2-198-51-100-1.compute-1.amazonaws.com
 
 #### 3.安装SS服务
 
-- 1.将我们当前登录的用户提升至root权限
+- 1.将当前登录用户提升至root权限
 
 ```
 sudo -s
 ```
 
-- 2.安装更新包
+- 2.更新软件列表
 
 ```
 apt-get update
