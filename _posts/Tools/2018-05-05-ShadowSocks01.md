@@ -24,21 +24,21 @@ tags:
 
 #### 1 [申请AWS账户](https://www.amazonaws.cn/)
 
-> AWS提供的基础服务免费1年，流量每月15G，对于查资料来说，一般不会超。有东京节点，距离近，延迟低
+> AWS提供免费1年的基础服务，流量每月15G，对于查资料来说，一般不会超。有东京节点，延迟低
 
 - 1.注册
 
-> 填写信息（一些敏感信息可以随意填，也可以填真实信息，使用英文填写）
+> 填写信息（一些敏感信息可以随意填，也可以填真实信息，使用英文）
 
 - 2.付款信息
 
-> 只支持信用卡，银联Visa等都可以。推荐某宝的虚拟aws EC2 信用卡，几块RMB。AWS基础服务免费，超出基础服务以外的部分需要收费，所以使用虚拟卡（**最近虚拟卡好像都很难过验证，所以。。。**），当然也可以使用真实的信用卡
+> 只支持信用卡，银联Visa等都可以。推荐某宝的虚拟aws EC2 信用卡，几块RMB（**最近虚拟卡好像都很难过验证，所以。。。**），当然也可以使用真实的信用卡
 
 - 3.身份验证
 
-> 国家选中国，填入自己的手机号，然后点立刻呼叫我。页面会弹出PIN码，同时接到验证电话，输入PIN码即可。稍后电话自动挂掉，浏览器网页刷新，完成验证
+> 国家选中国，填入手机号，立刻呼叫。页面弹出PIN码，接听验证电话，输入PIN码即可。等待电话挂掉和网页刷新，完成验证
 
-- 4.点击继续选择支持方案
+- 4.选择支持方案
 
 > 选择"基本（免费）"，继续完成AWS账号创建，邮箱会收到几封邮件
 
@@ -50,7 +50,7 @@ tags:
 - 2.选择地区(如东京)。之前发送的邮件中，限定了可以创建主机的区域，如果在以外的区域创建会失败
 - 3.服务菜单中选择EC2，启动实例，选择系统Ubuntu Server 16.04 LTS(HVM)（带有的免费标签的）
 
-> 如果之前填写的信用卡有问题，可能会提示：确保你之前的信息提供正确，此时就需要进入我的账户，在付款方式中更改信用卡信息
+> 若之前填写的信用卡有误，可能会提示：确保之前的信息提供正确。进入我的账户，在付款方式中更改信用卡信息
 
 - 4.选择符合条件的免费套餐，点击审核和启动
 - 5.创建新密匙对，,密匙对名字随意（英文），这里取名"r3"，并下载密匙对r3.pem文件
@@ -59,19 +59,19 @@ tags:
 
 - 6.启动实例
 
-> 至此，服务器已经创建。服务器名=实例ID（i-xxxx），可查看该服务器实例信息。其中公有DNS和公有IP，后面会用到
+> 服务器名=实例ID（i-xxx），可查看该服务器实例信息。其中公有DNS和公有IP，后面会用到
 
 #### 2.连接服务器
 
-> 本地机器如果是Windows，可用xshell或putty等ssh客户端，自行解决。这里本地使用Ubuntu连接AWS的Ubuntu，具体可参见[使用 SSH连接到Linux 实例](https://docs.aws.amazon.com/zh_cn/AWSEC2/latest/UserGuide/AccessingInstancesLinux.html)。简化步骤如下：
+> 本地如果是Windows，可用xshell或putty等ssh客户端，自行解决。这里本地使用Ubuntu连接AWS的Ubuntu，具体可参见[使用 SSH连接到Linux 实例](https://docs.aws.amazon.com/zh_cn/AWSEC2/latest/UserGuide/AccessingInstancesLinux.html)。简化步骤如下：
 
-- 1.检查是否安装了SSH客户端（Ubuntu默认安装了openssh client）。如果没有可参见[http://www.openssh.com](http://www.openssh.com/)
+- 1.检查是否安装了SSH客户端（Ubuntu默认安装openssh client）。如果没有可参见[官网](http://www.openssh.com/)
 
 ```
 ssh
 ```
 
-- 2.修改秘钥r3.pem的权限：
+- 2.修改秘钥r3.pem的权限
 
 ```
 chmod 400 /path/my-key-pair.pem
@@ -93,19 +93,19 @@ ssh -i /path/r3.pem ubuntu@ec2-198-51-100-1.compute-1.amazonaws.com
 sudo -s
 ```
 
-- 2. 安装更新包
+- 2.安装更新包
 
 ```
 apt-get update
 ```
 
-- 3. 安装python-pip，后面要用pip命令安装Python版的SS服务端
+- 3.安装python-pip，后面要用pip命令安装Python版的SS服务端
 
 ```
 apt-get install python-pip
 ```
 
-- 4. 安装shadowsocks
+- 4.安装shadowsocks
 
 ```
 pip install shadowsocks
@@ -164,7 +164,7 @@ vi /etc/shadowsocks.json
 }
 ```
 
-> 只需要修改server_port和password，选择服务器上空闲的端口即可。local_port、local_address和加密方式等都不需要改
+> 修改server_port和password，选择服务器的空闲端口即可。local_port、local_address和加密方式等不必修改
 
 #### 5.启动SS服务
 
