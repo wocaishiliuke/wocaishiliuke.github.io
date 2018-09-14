@@ -1,5 +1,5 @@
 ---
-title: JavaSE基础
+title: Java基础
 date: 2018-01-01 00:00:00
 categories:
     - JavaSE
