@@ -225,7 +225,7 @@ System.out.println(arr[0][0]);//0
 >相当于静态初始化
 
 ```
-int[][] arr = { {1,2,3},{4,5},{6,7,8} };
+<p>int[][] arr = {{1,2,3},{4,5},{6,7,8}};</p>
 System.out.println(arr[0]);//[I@7852e922
 System.out.println(arr[1]);//[I@4e25154f
 System.out.println(arr[2]);//[I@70dea4e
