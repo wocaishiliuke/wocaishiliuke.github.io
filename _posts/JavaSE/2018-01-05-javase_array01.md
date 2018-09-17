@@ -225,7 +225,7 @@ System.out.println(arr[0][0]);//0
 >相当于静态初始化
 
 ```
-//这里打空格时为了防止jekyll报错（报{{没有正常闭合）
+//这里打空格时为了防止jekyll报错（报标签没有正常闭合）
 int[][] arr = { {1,2,3},{4,5},{6,7,8} };
 System.out.println(arr[0]);//[I@7852e922
 System.out.println(arr[1]);//[I@4e25154f
