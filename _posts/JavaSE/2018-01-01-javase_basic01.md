@@ -5,8 +5,6 @@ categories:
     - JavaSE
 tags:
     - JavaSE
-    - Basic
-    - Java
 ---
 
 本文记录一些基础知识。

@@ -5,8 +5,6 @@ categories:
     - JavaSE
 tags:
     - JavaSE
-    - DataType
-    - Java
 ---
 
 本文记录Java数据类型的基本知识。
