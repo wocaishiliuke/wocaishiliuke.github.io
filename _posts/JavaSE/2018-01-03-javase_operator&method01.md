@@ -285,7 +285,7 @@ public class HelloWorld {
 }
 ```
 
-- public：被jvm调用，所以权限要足够大
+- public：被jvm调用，所以权限要足够大，必须是public
 - static：被jvm调用时，不需要创建HelloWorld对象，直接类名调用即可
 - void：被jvm调用，不需要有任何的返回值
 - 方法名main：固定
