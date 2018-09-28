@@ -97,6 +97,8 @@ Each JSP page has a default mode for EL expression evaluation.The default value 
 
 # III.各技术版本
 
+![avatar](../../_pics/Servlet/note01_01.png)
+
 Java EE 1.2 (December 12, 1999)
 Java EE 1.3 (September 24, 2001)
 Java EE 1.4 (November 11, 2003)
