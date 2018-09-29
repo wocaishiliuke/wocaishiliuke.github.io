@@ -54,18 +54,32 @@ tags:
 
 # II.Java简介
 
+> JAVA技术，既可指一种编程语言，又可指Java Platform
+> - 编程语言：有特定语法和风格的高级面向对象语言
+> - Java平台：Java应用运行的环境（Java SE、Java EE、Java ME、JavaFX）
+
 - James Gosling
 - 前名"Oak"（橡树）
 - 特点：开源、跨系统平台(write once,run anywhere! 各系统的JVM，JVM负责Java程序运行)、面向对象
 
 #### 1.平台版本
 
-> J2SE、J2ME、J2EE(WEB开发，包含servlet，jsp等)
+> [所有平台](https://docs.oracle.com/javaee/6/firstcup/doc/gkhoy.html)都包括a virtual machine and an API
+> - JVM：是个program，针对不同硬件和软件平台
+> - API：组件集合，用来编写应用
+
+> 分为Java SE、Java ME、Java EE(WEB开发，包含servlet，jsp等)、JavaFX（富互联网应用）
+
+> 其中Java SE版本包含：
+> - API：提供了Java语言的基础核心功能。其中定义了basic types and objects，以及用于networking、security、database access、graphical user interface (GUI) development和XML parsing的类
+> - JVM
+> - 开发工具、部署技术、其他常用的类库和工具包
+> - Java EE版本就是建立在Java SE基础上，额外提供了Servlet、JSP等API
 
 #### 2.JVM、JRE和JDK
 
-- JVM(Virtual Machine)
-- JRE(Runtime Environment) = JVM + java程序所需的核心类库等
+- JVM(Virtual Machine)：针对不同硬件和软件平台
+- JRE(Runtime Environment) = JVM + java程序所需的核心类库等（运行环境）
 - JDK(Development Kit) = JRE + 开发工具(javac编译工具、jar打包工具、java等)，SDK的一种
     - JAVASE5.0(1.5.0)/JDK5.0是里程碑版本(Tiger)，特性比较重要
 
