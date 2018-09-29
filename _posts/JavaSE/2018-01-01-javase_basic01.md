@@ -64,17 +64,18 @@ tags:
 
 #### 1.平台版本
 
-> [所有平台](https://docs.oracle.com/javaee/6/firstcup/doc/gkhoy.html)都包括a virtual machine and an API
-> - JVM：是个program，针对不同硬件和软件平台
-> - API：组件集合，用来编写应用
-
 > 分为Java SE、Java ME、Java EE(WEB开发，包含servlet，jsp等)、JavaFX（富互联网应用）
 
-> 其中Java SE版本包含：
+> [所有平台](https://docs.oracle.com/javaee/6/firstcup/doc/gkhoy.html)都包括a virtual machine and an API
+> - JVM：是个program，针对不同硬件和软件平台
+> - API：接口，用来编写应用
+
+> 其中Java SE平台版本中包含：
 > - API：提供了Java语言的基础核心功能。其中定义了basic types and objects，以及用于networking、security、database access、graphical user interface (GUI) development和XML parsing的类
 > - JVM
 > - 开发工具、部署技术、其他常用的类库和工具包
-> - Java EE版本就是建立在Java SE基础上，额外提供了Servlet、JSP等API
+>
+> Java EE平台版本建立在Java SE基础上，额外提供了Servlet、JSP等API
 
 #### 2.JVM、JRE和JDK
 
