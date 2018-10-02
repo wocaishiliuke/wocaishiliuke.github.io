@@ -116,6 +116,8 @@ var _hmt = _hmt || [];
 </script>
 ```
 
+###### 2.
+
 ## 3.博客工程介绍
 
 > jekyll生成的站点目录
@@ -130,7 +132,42 @@ var _hmt = _hmt || [];
 |_data|放一些其他配置文件,必须是.yml或者.yaml格式的,比如有一个文件叫members.yml,如果想引用这个文件里的内容就通过site.data.membres来引用|
 |_site|一旦 Jekyll 完成转换，就会将生成的页面放在这里（默认）。最好将这个目录放进你的 .gitignore 文件中|
 
-## 4.参考
+## 4.域名绑定
+
+#### 1.域名购买
+
+> 这里使用阿里云购买
+
+#### 2.域名解析
+
+> 在阿里云控制台设置。因为是域名间跳转，所以添加CNAME类型的域名解析
+
+|记录类型|主机记录|解析线路|记录值|TL|备注|
+|:------|:-----|:------|:----|:--|:--|
+|CNAME|blog(.wocaishiliuke.cn)|默认|wocaishiliuke.github.io|10 min| |
+|CNAME|@(.wocaishiliuke.cn)|默认|wocaishiliuke.github.io（要.?）|10 min|可选，@是为了wocaishiliuke.cn也能访问|
+
+> 域名解析变更需要时间来设置各级DNS服务器
+
+#### 3.CNAME
+
+> - 该文件告诉Github Pages服务器要想指定的域名，该域名不能包含前缀信息
+> - 该文件只能配置一个域名，要映射多个域名，需要创建多个CNAME文件
+
+###### 方式1：页面中设置
+
+> - settings-->GitHub Pages的Custom domain中设置跳转的域名
+> - 该方式会自动创建CANME文件
+
+###### 方式2：手动创建
+
+> 创建CNAME文件（文件名必须大写，没有后缀。只能配置一个）
+
+```
+blog.wocaishiliuke.cn
+```
+
+## 5.参考
 
 - [Jekyll](https://www.jekyll.com.cn/docs/github-pages/)
 - [Jekyll主题](http://jekyllthemes.org/)
