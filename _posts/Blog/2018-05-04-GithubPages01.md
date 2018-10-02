@@ -98,7 +98,23 @@ gem install jekyll
 
 #### 2.4 集成第三方服务
 
+###### 1.百度统计
 
+- 1.在百度统计添加该博客的网站列表
+- 2.在代码获取中，得到hm.js?后的参数
+- 3.在主配置文件_config.yml中设置baidu_analytics即可
+
+```
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?xxxxxxxxxxxxxxxxxxxx";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+```
 
 ## 3.博客工程介绍
 
