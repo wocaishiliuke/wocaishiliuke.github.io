@@ -73,7 +73,7 @@ gem install jekyll
 
 - 1.选择主题
 
-> [选则一款主题]((http://jekyllthemes.org/))。这里选用了NexT主题，该主题衍生自[Hexo NexT](http://theme-next.iissnan.com/)。参考[Jekyll NexT的安装说明](http://theme-next.simpleyyt.com/getting-started.html)，其中包括了：
+> [选则一款主题](http://jekyllthemes.org/)。这里选用了NexT主题，该主题衍生自[Hexo NexT](http://theme-next.iissnan.com/)。参考[Jekyll NexT的安装说明](http://theme-next.simpleyyt.com/getting-started.html)，其中包括了：
 
 > - 1.bundler安装
 > - 2.clone主题到本地
