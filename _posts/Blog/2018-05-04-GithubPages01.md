@@ -16,6 +16,7 @@ tags:
 ##### 目录
 + I.简介
 + II.创建
++ III.目录介绍
 
 ---
 
@@ -34,7 +35,7 @@ tags:
 
 # II.创建
 
-## 2.1 创建github项目
+## 1.创建github项目
 
 > 参考[官网](https://pages.github.com/)的 User or organization site
 
@@ -53,11 +54,11 @@ git push origin master
 
 > 访问https://username.github.io即可
 
-#### 2.2 安装Jekyll
+## 2.安装Jekyll
 
 - 1.配置ruby环境
 
-> 参考[Ubuntu环境搭建](http://wocaishiliuke.github.io/linux/2018/06/30/Ubuntu01/)，完成Ruby和RubyGems的安装
+
 
 - 2.安装Jekyll
 
@@ -65,36 +66,36 @@ git push origin master
 gem install jekyll
 ```
 
-#### 2.3 主题
+## 3.主题
 
-- 1.选择主题
+#### 3.1 选择主题
 
 > [选则一款主题](http://jekyllthemes.org/)。这里选用了NexT主题，该主题衍生自[Hexo NexT](http://theme-next.iissnan.com/)。参考[Jekyll NexT的安装说明](http://theme-next.simpleyyt.com/getting-started.html)，其中包括了：
 
-> - 1.bundler安装
-> - 2.clone主题到本地
-> - 3.使用bundle安装依赖
-> - 4.运行Jekyll
-> - 5.本地访问http://localhost:4000，查看效果
+- 1.bundler安装
+- 2.clone主题到本地
+- 3.使用bundle安装依赖
+- 4.运行Jekyll
+- 5.本地访问http://localhost:4000，查看效果
 
 > 在bundle安装依赖时会无反应，参考[ali的ruby镜像说明](https://ruby.taobao.org/)，因为使用bundle，使用第二种bundle config的方式（可能要重启），再执行bundle install
 
-- 2.主题设置
+#### 3.2 主题设置
 
 > 参考[NexT官网](http://theme-next.simpleyyt.com/theme-settings.html)的主题样式设置，也可以集成第三方服务，完成本地测试
 
-- 3.主题集成
+#### 3.3 主题集成
 
 > 将本地测试后的主题，集成到username.github.io项目，主要包括：
 
-> - 将NexT项目除README等都拷贝到自己的项目
-> - 在_posts文件夹中存放编写的blog源文件，注意格式要求（日期和标题）
-> - _site用于存放Jekyll转换生成的页面，要在.gitignore中忽略掉
-> - 提交代码即可
+- 将NexT项目除README等都拷贝到自己的项目
+- 在_posts文件夹中存放编写的blog源文件，注意格式要求（日期和标题）
+- _site用于存放Jekyll转换生成的页面，要在.gitignore中忽略掉
+- 提交代码即可
 
-#### 2.4 集成第三方服务
+## 4.集成第三方服务
 
-###### 1.百度统计
+#### 4.1 百度统计
 
 - 1.在百度统计添加该博客的网站列表
 - 2.在代码获取中，得到hm.js?后的参数
@@ -112,11 +113,11 @@ var _hmt = _hmt || [];
 </script>
 ```
 
-###### 2.
+#### 4.2 TODO
 
-## 3.博客工程介绍
+# III.目录介绍
 
-> jekyll生成的站点目录
+> 该博客工程的目录结构：
 
 |文件/目录 | 描述 |
 |:------------|:-------|
@@ -128,34 +129,34 @@ var _hmt = _hmt || [];
 |_data|放一些其他配置文件,必须是.yml或者.yaml格式的,比如有一个文件叫members.yml,如果想引用这个文件里的内容就通过site.data.membres来引用|
 |_site|一旦 Jekyll 完成转换，就会将生成的页面放在这里（默认）。最好将这个目录放进你的 .gitignore 文件中|
 
-## 4.域名绑定
+# IV.域名绑定
 
-#### 1.域名购买
+## 1.域名购买
 
-> 这里使用阿里云购买
+> 阿里云购买
 
-#### 2.域名解析
+## 2.域名解析
 
 > 在阿里云控制台设置。因为是域名间跳转，所以添加CNAME类型的域名解析
 
 |记录类型|主机记录|解析线路|记录值|TL|备注|
 |:------|:-----|:------|:----|:--|:--|
-|CNAME|blog(.wocaishiliuke.cn)|默认|wocaishiliuke.github.io|10 min| |
-|CNAME|@(.wocaishiliuke.cn)|默认|wocaishiliuke.github.io（要.?）|10 min|可选，@是为了wocaishiliuke.cn也能访问|
+|CNAME|blog（.wocaishiliuke.cn）|默认|wocaishiliuke.github.io|10 min| |
+|CNAME|@（.wocaishiliuke.cn）|默认|wocaishiliuke.github.io（要.?）|10 min|可选，@是为了wocaishiliuke.cn也能访问|
 
 > 域名解析变更需要时间来设置各级DNS服务器
 
-#### 3.CNAME
+## 3.CNAME
 
 > - 该文件告诉Github Pages服务器要想指定的域名，该域名不能包含前缀信息
 > - 该文件只能配置一个域名，要映射多个域名，需要创建多个CNAME文件
 
-###### 方式1：页面中设置
+#### 方式1：页面中设置
 
 > - settings-->GitHub Pages的Custom domain中设置跳转的域名
 > - 该方式会自动创建CANME文件
 
-###### 方式2：手动创建
+#### 方式2：手动创建
 
 > 创建CNAME文件（文件名必须大写，没有后缀。只能配置一个）
 
