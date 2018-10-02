@@ -19,11 +19,9 @@ tags:
 
 ---
 
-# I.创建
-
 > 系统：Ubuntu16.04LTS
 
-## 1.简介
+# I.简介
 
 > - [Github Pages](https://pages.github.com/)
 分为[两种基本类型](https://www.jekyll.com.cn/docs/github-pages/)：用户/组织的站点、项目的站点
@@ -34,9 +32,9 @@ tags:
 
 > 这里使用用户/组织的站点形式，即在Github上创建username.github.io项目即可
 
-## 2.创建
+# II.创建
 
-#### 2.1 创建github项目
+## 2.1 创建github项目
 
 > 参考[官网](https://pages.github.com/)的 User or organization site
 
