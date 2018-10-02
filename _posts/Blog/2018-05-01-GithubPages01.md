@@ -1,6 +1,6 @@
 ---
 title: Github Pages + Jekyll博客搭建
-date: 2018-05-04 00:00:00
+date: 2018-05-01 00:00:00
 categories:
     - Blog
 tags:
@@ -58,7 +58,7 @@ git push origin master
 
 - 1.配置ruby环境
 
-
+> 参考[Ubuntu环境搭建](http://wocaishiliuke.github.io/linux/2018/06/30/Ubuntu01/)，完成Ruby和RubyGems的安装
 
 - 2.安装Jekyll
 
