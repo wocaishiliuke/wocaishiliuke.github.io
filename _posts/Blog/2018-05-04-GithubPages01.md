@@ -34,8 +34,6 @@ tags:
 
 > 这里使用用户/组织的站点形式，即在Github上创建username.github.io项目即可
 
-(https://help.github.com/articles/configuring-a-publishing-source-for-github-pages/)
-
 ## 2.创建
 
 #### 2.1 创建github项目
