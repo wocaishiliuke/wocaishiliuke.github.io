@@ -102,7 +102,7 @@ gem install jekyll
 
 - 1.在百度统计添加该博客的网站列表
 - 2.在代码获取中，得到hm.js?后的参数
-- 3.在主配置文件_config.yml中设置baidu_analytics即可
+- 3.在主配置文件_config.yml中设置baidu_analytics即可（注意yml格式）
 
 ```
 <script>
