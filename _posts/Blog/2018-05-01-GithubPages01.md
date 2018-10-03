@@ -113,7 +113,7 @@ var _hmt = _hmt || [];
 </script>
 ```
 
-#### 4.2 TODO
+#### 4.2 LeanCloud
 
 # III.目录介绍
 
@@ -150,6 +150,7 @@ var _hmt = _hmt || [];
 
 > - 该文件告诉Github Pages服务器要想指定的域名，该域名不能包含前缀信息
 > - 该文件只能配置一个域名，要映射多个域名，需要创建多个CNAME文件
+> - Github读取CNAME，Github服务器会xxx.github.io的请求重定向到配置的域名
 
 #### 方式1：页面中设置
 
@@ -158,7 +159,7 @@ var _hmt = _hmt || [];
 
 #### 方式2：手动创建
 
-> 创建CNAME文件（文件名必须大写，没有后缀。只能配置一个）
+> 创建CNAME文件（文件名必须大写，没有后缀。一个CNAME只能配置一个）
 
 ```
 blog.wocaishiliuke.cn
