@@ -139,12 +139,12 @@ var _hmt = _hmt || [];
 
 > 在阿里云控制台设置。因为是域名间跳转，所以添加CNAME类型的域名解析
 
-|记录类型|主机记录|解析线路|记录值|TL|备注|
-|:------|:-----|:------|:----|:--|:--|
-|CNAME|blog（.wocaishiliuke.cn）|默认|wocaishiliuke.github.io|10 min| |
-|CNAME|@（.wocaishiliuke.cn）|默认|wocaishiliuke.github.io（要.?）|10 min|可选，@是为了wocaishiliuke.cn也能访问|
+|记录类型|主机记录|解析线路|记录值|TL|
+|:------|:-----|:------|:----|:--|
+|CNAME|blog（.wocaishiliuke.cn）|默认|wocaishiliuke.github.io|10 min|
+|CNAME|@（.wocaishiliuke.cn）|默认|wocaishiliuke.github.io（要.?）|10 min|
 
-> 域名解析变更需要时间来设置各级DNS服务器
+> 域名解析变更需要时间来设置各级DNS服务器。其中@可选，是为了wocaishiliuke.cn也能访问
 
 ## 3.CNAME
 
