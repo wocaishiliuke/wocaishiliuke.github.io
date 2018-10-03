@@ -70,15 +70,51 @@ gem install jekyll
 
 #### 3.1 选择主题
 
-> [选则一款主题](http://jekyllthemes.org/)。这里选用了NexT主题，该主题衍生自[Hexo NexT](http://theme-next.iissnan.com/)。参考[Jekyll NexT的安装说明](http://theme-next.simpleyyt.com/getting-started.html)，其中包括了：
+> [选则一款主题](http://jekyllthemes.org/)。这里选用NexT主题，该主题衍生自[Hexo NexT](http://theme-next.iissnan.com/)。参考[Jekyll NexT的安装说明](http://theme-next.simpleyyt.com/getting-started.html)，主要包括：
 
 - 1.bundler安装
+
+```
+# 确保Ruby 2.1.0或更高
+ruby --version
+
+# 安装Bundler
+gem install bundler
+```
+
 - 2.clone主题到本地
+
+```
+git clone https://github.com/Simpleyyt/jekyll-theme-next.git
+cd jekyll-theme-next
+```
+
 - 3.使用bundle安装依赖
+
+```
+bundle install
+```
+
+> - 在bundle安装依赖时会无反应，参考[ali的ruby镜像说明](https://ruby.taobao.org/)
+> - 国内很难访到RubyGems。镜像管理工作交由[Ruby China](https://gems.ruby-china.com/)负责
+> - 为rubygems.org server添加本地镜像。这里使用第二种bundle config的方式（可能要重启），再执行bundle install
+
+```
+gem sources -l
+
+# 使用bundle添加rubygem本地镜像。另原域名~~https://gems.ruby-china.org~~不再使用
+bundle config mirror.https://rubygems.org https://gems.ruby-china.com
+```
+
 - 4.运行Jekyll
+
+```
+cd wocaishiliuke.github.io
+bundle exec jekyll server
+```
+
 - 5.本地访问http://localhost:4000，查看效果
 
-> 在bundle安装依赖时会无反应，参考[ali的ruby镜像说明](https://ruby.taobao.org/)，因为使用bundle，使用第二种bundle config的方式（可能要重启），再执行bundle install
 
 #### 3.2 主题设置
 
@@ -113,7 +149,37 @@ var _hmt = _hmt || [];
 </script>
 ```
 
-#### 4.2 LeanCloud
+#### 4.2 LeanCloud阅读量
+
+####### 1.设置
+
+- 在LeanCloud创建应用BlogStatistic
+- 在该应用中创建Class（无限制），名为Counter，来保存博客的访问量等数据
+- 在应用的设置的应用key中，获取App ID和App Key，配置到_config.xml中对应位置
+
+```
+leancloud_visitors:
+  enable: true
+  app_id: xxxxx
+  app_key: xxx
+```
+
+- Web安全
+
+> 应用的AppID和AppKey暴露在外，所以建议在应用的安全中心指定博客域名为安全域名，确保数据调用的安全
+
+```
+# 在LeanCloud应用的安全中心的Web安全域名中填写
+http://blog.wocaishiliuke.cn
+```
+
+###### 2.后台
+
+> 在LeanCloud后台查看应用的Counter表中统计记录
+
+- time的数值可以修改，所以某一篇文章的访问量可以...
+- 记录文章访问量的唯一标识是**发布日期+标题*(即url)，如果更改了这两值，会造成文章阅读数清零重计
+- title字段只是方便后台区分文章。其他字段自动生成，不要随意修改，可查看LeanCloud官方文档
 
 # III.目录介绍
 
