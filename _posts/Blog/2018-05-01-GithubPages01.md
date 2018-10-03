@@ -151,7 +151,7 @@ var _hmt = _hmt || [];
 
 #### 4.2 LeanCloud阅读量
 
-####### 1.设置
+###### 1.设置
 
 - 在LeanCloud创建应用BlogStatistic
 - 在该应用中创建Class（无限制），名为Counter，来保存博客的访问量等数据

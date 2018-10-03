@@ -106,11 +106,15 @@ Each JSP page has a default mode for EL expression evaluation.The default value 
 #### 1.1 Java SE和JDK
 
 > - Java SE是Java的一个平台，而JDK是开发工具包。JDK和Java SE的版本发布相同
-> - JDK，全称Java SE Development Kit，区别于Oracle的Java EE Development Kit（）
+> - JDK，全称Java SE Development Kit，区别于Oracle的Java EE Development Kit
 > - JDK包含了Java SE的JVM和API，额外的还有其他编译、打包等开发工具
-> - Java EE SDK是在oracle收购后推出的，比JDK更多jar，如Servlet、JSP、JPA、JSTL等，支持企业级开发（所以企业级Web开发两种方式：1.基于JDK+Spring等开源框架，2.基于Java EE SDK，目前第一种方式流行，所以大部分使用JDK开发，根据需要额外引入Servlet、JSP等Java EE的相关jar）
+> - Java EE SDK比JDK更多jar，如Servlet、JSP、JPA、JSTL等，支持企业级开发（所以企业级Web开发两种方式：1.基于JDK+Spring等开源框架，2.基于Java EE SDK，目前第一种方式流行，所以大部分使用JDK开发，根据需要额外引入Servlet、JSP等Java EE的相关jar）
 
 ![avatar](http://pfrbjjhdv.bkt.clouddn.com/image/blog/Servlet/note01_02.png)
+
+#### 1.2 Java EE
+
+> 前名J2EE（Java 2 Platform Enterprise Edition），现名Jakarta EE
 
 |版本|日期|
 |:--|:---|
