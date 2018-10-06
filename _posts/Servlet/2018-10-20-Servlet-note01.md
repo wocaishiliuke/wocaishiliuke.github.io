@@ -112,6 +112,8 @@ Each JSP page has a default mode for EL expression evaluation.The default value 
 > - JDK包含了Java SE的JVM和API，额外的还有其他编译、打包等开发工具
 > - Java EE SDK比JDK更多jar，如Servlet、JSP、JPA、JSTL等，支持企业级开发（所以企业级Web开发两种方式：1.基于JDK+Spring等开源框架，2.基于Java EE SDK，目前第一种方式流行，所以大部分使用JDK开发，根据需要额外引入Servlet、JSP等Java EE的相关jar）
 
+<img src="/_images/Servlet/note01_01.png"/>
+
 ![avatar](http://pfrbjjhdv.bkt.clouddn.com/image/blog/Servlet/note01_02.png)
 
 #### 1.2 Java EE
@@ -145,7 +147,7 @@ JAX-RS、JAX-WS、Web Services Metadata、Java API for XML Messaging、JAXR|
 |APM|J2EE Management|
 |Related|JAXB、JAXP、JDBC、JMX、JavaBeans Activation Framework、Streaming API for XML|
 
-<img src="/assets/123.jpg" class="full-image" />
+<img src="/_images/note01_02.jpg" class="full-image" />
 
 ## 2.Tomcat版本
 
