@@ -101,7 +101,9 @@ Each JSP page has a default mode for EL expression evaluation.The default value 
 
 主要有Java SE版本、JDK版本、Java EE版本
 
-> 关于Java SE和JDK的命名[参考官网](https://www.oracle.com/technetwork/java/javase/namechange-140185.html)。虽然1.5及以后，5/6/7...作为发布的生产版本，但仍然保留了1.5.0（1.5）...等作为开发版本。所以Java SE 7=Java SE 1.7.0=Java SE 1.7，JDK 7=JDK 1.7.0=JDK 1.7
+> - 关于Java SE和JDK的命名[参考官网](https://www.oracle.com/technetwork/java/javase/namechange-140185.html)
+> - 虽然从J2SE 1.5开始，5/6/7...作为发布的生产版本，但仍然保留了1.5.0（1.5）...等作为开发版本。所以J2SE 5.0 = J2SE 5 = J2SE 1.5.0 
+> - 从6开始，更名为Java SE，即Java SE 7=Java SE 1.7.0=Java SE 1.7，JDK 7=JDK 1.7.0=JDK 1.7
 
 #### 1.1 Java SE和JDK
 
@@ -114,19 +116,38 @@ Each JSP page has a default mode for EL expression evaluation.The default value 
 
 #### 1.2 Java EE
 
-> 前名J2EE（Java 2 Platform Enterprise Edition），现名Jakarta EE
+> - 前名J2EE（Java 2 Platform Enterprise Edition），后名Java EE（Java Platform Enterprise Edition），2018.3更名Jakarta EE
+> - 1998年发表JDK1.2时，Java开始分为J2SE、J2EE、J2ME，所以Java EE开始于J2EE 1.2
+> - 2006年发布的SE平台改名为Java SE 6，EE平台版本更名为Java EE 5
+> - Web profile（Java EE Web Profile SDK）是Java EE（Java EE Platform SDK）的子集，只包含了常用的Servlet、JSP、JSF、EJB、JPA和JTA等规范，不包括JMS、JNDI等不常用的API，更轻量
 
 |版本|日期|
-|:--|:---|
-|Java EE 1.2|December 12, 1999|
-|Java EE 1.3|September 24, 2001|
-|Java EE 1.4|November 11, 2003|
-|Java EE 5|May 11, 2006|
-|Java EE 6|December 10, 2009|
-|Java EE 7|May 28, 2013|
-|Java EE 8|August 31, 2017|
+|:---|:---|
+|J2EE 1.2 |December 12, 1999|
+|J2EE 1.3 |September 24, 2001|
+|J2EE 1.4 |November 11, 2003|
+|Java EE 5 |May 11, 2006|
+|Java EE 6 |December 10, 2009|
+|Java EE 7 |May 28, 2013,but April 5, 2013 according to spec document. June 12, 2013 was the planned kickoff date|
+|Java EE 8 |August 31, 2017|
 
-## 1.Tomcat版本
+> EE平台版本一般比同版本的SE版本晚。它基于SE，另由一系列技术标准组成。以Java EE 7为例，包含的specifications如下
+
+|标准类别|具体项|
+|:------|:-------|
+|Web app|
+Servlet、JavaServer Pages、Expression Language、JSTL、JavaServer Faces、WebSocket|
+|Enterprise app| 
+Dependency injection、Bean Validation、Enterprise JavaBeans、JPA、JMS、JTA、JavaMail、JCA
+Common Annotations|
+|Web services|
+JAX-RS、JAX-WS、Web Services Metadata、Java API for XML Messaging、JAXR|
+|APM|J2EE Management|
+|Related|JAXB、JAXP、JDBC、JMX、JavaBeans Activation Framework、Streaming API for XML|
+
+<img src="/assets/123.jpg" class="full-image" />
+
+## 2.Tomcat版本
 
 > - Tomcat是Java Servlet和JavaServer Pages技术的实现
 > - 不同版本的Servlet和JSP可使用的tomcat版本也不同，对应关系[参考官网](http://tomcat.apache.org/whichversion.html)如下
@@ -155,5 +176,4 @@ JEE6	10 Dec 2009	Servlet 3.0 JSP 2.2 JSTL 1.2 JS 2.0 EL 2.2
 JEE7	12 Jun 2013	Servlet 3.1 JSP 2.3 JSTL 1.2 JSF ;2.2 EL 3.0
 
 早起的JEE只包含JSP和Servlet，后来EL、JSTL、JSF也加入JEE。JEE本身的命名也是交错的，起初JEE叫做J2EE，即J2EE1.1、J2EE1.2。但J2EE1.3版本被命名为JEE3，此后就延续为JEE4、JEE5、JEE6...
-
 James Gosling在1994-1995致力于Web Server的工作，这也成为了后来servlet的基础。1996年Pavani Diwanji牵头一个大项目，Sun公司的Java Web server产品诞生于该项目。1999年1月，以James Davidson为首的Servlet项目组发布了Servlet2.1，同年12月发布了Servlet2.2。而以Larry Cable和Eduardo Pelegri-Llopart为首的JSP项目组，在1999年6月发布了JSP1.0，同年12月发布了JSP1.1
