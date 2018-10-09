@@ -134,7 +134,7 @@ Each JSP page has a default mode for EL expression evaluation.The default value 
 > EE平台版本一般比同版本的SE版本晚。它基于SE，另由一系列技术标准组成。以Java EE 7为例，包含的specifications如下
 
 |标准类别|具体项|
-|:------|:-------|
+|:-------|:-----|
 |Web app|
 Servlet、JavaServer Pages、Expression Language、JSTL、JavaServer Faces、WebSocket|
 |Enterprise app| 
@@ -145,7 +145,9 @@ JAX-RS、JAX-WS、Web Services Metadata、Java API for XML Messaging、JAXR|
 |APM|J2EE Management|
 |Related|JAXB、JAXP、JDBC、JMX、JavaBeans Activation Framework、Streaming API for XML|
 
+
 ![avatar](http://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/Servlet/note01_02.jpg?Expires=1539059689&OSSAccessKeyId=TMP.AQEwYgBlk9t39jeplbMfAkkzOeyZ2LbecJW-14i7jubPX0s3mZQ9Z3IDWP0LAAAwLAIUdDKIi-HlO0_BadqASaEkcRoaIKQCFCnlg_-9eBjhpeQhs6ZZNzouNWEr&Signature=0sdrMNG1jaFKj8hShr20h50a8S4%3D)
+
 
 ## 2.Tomcat版本
 
@@ -155,14 +157,6 @@ JAX-RS、JAX-WS、Web Services Metadata、Java API for XML Messaging、JAXR|
 ![avatar](http://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/Servlet/note01_03.png?Expires=1539061359&OSSAccessKeyId=TMP.AQEwYgBlk9t39jeplbMfAkkzOeyZ2LbecJW-14i7jubPX0s3mZQ9Z3IDWP0LAAAwLAIUdDKIi-HlO0_BadqASaEkcRoaIKQCFCnlg_-9eBjhpeQhs6ZZNzouNWEr&Signature=FARXbjYITUvkvijYlGdi5gxFKsY%3D)
 
 > 最后一栏是Tomcat对JDK版本的要求
-
-Java EE 1.2 (December 12, 1999)
-Java EE 1.3 (September 24, 2001)
-Java EE 1.4 (November 11, 2003)
-Java EE 5 (May 11, 2006)
-Java EE 6 (December 10, 2009)
-Java EE 7 (May 28, 2013)
-Java EE 8 (August 31, 2017)
 
 
 Ver	Rel Date	
@@ -175,5 +169,5 @@ JEE5	11 May 2006	Servlet 2.5 JSP 2.1 JSTL 1.2 JSF 1.2
 JEE6	10 Dec 2009	Servlet 3.0 JSP 2.2 JSTL 1.2 JS 2.0 EL 2.2
 JEE7	12 Jun 2013	Servlet 3.1 JSP 2.3 JSTL 1.2 JSF ;2.2 EL 3.0
 
-早起的JEE只包含JSP和Servlet，后来EL、JSTL、JSF也加入JEE。JEE本身的命名也是交错的，起初JEE叫做J2EE，即J2EE1.1、J2EE1.2。但J2EE1.3版本被命名为JEE3，此后就延续为JEE4、JEE5、JEE6...
+早期的JEE只包含JSP和Servlet，后来EL、JSTL、JSF也加入JEE。JEE本身的命名也是交错的，起初JEE叫做J2EE，即J2EE1.1、J2EE1.2。但J2EE1.3版本被命名为JEE3，此后就延续为JEE4、JEE5、JEE6...
 James Gosling在1994-1995致力于Web Server的工作，这也成为了后来servlet的基础。1996年Pavani Diwanji牵头一个大项目，Sun公司的Java Web server产品诞生于该项目。1999年1月，以James Davidson为首的Servlet项目组发布了Servlet2.1，同年12月发布了Servlet2.2。而以Larry Cable和Eduardo Pelegri-Llopart为首的JSP项目组，在1999年6月发布了JSP1.0，同年12月发布了JSP1.1
