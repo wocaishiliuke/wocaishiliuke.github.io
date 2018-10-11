@@ -112,7 +112,7 @@ Each JSP page has a default mode for EL expression evaluation.The default value 
 > - JDK包含了Java SE的JVM和API，额外的还有其他编译、打包等开发工具
 > - Java EE SDK比JDK更多jar，如Servlet、JSP、JPA、JSTL等，支持企业级开发（所以企业级Web开发两种方式：1.基于JDK+Spring等开源框架，2.基于Java EE SDK，目前第一种方式流行，所以大部分使用JDK开发，根据需要额外引入Servlet、JSP等Java EE的相关jar）
 
-<div align=center>![avatar](http://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/Servlet/note01_01.png)</div>
+<center>![avatar](http://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/Servlet/note01_01.png)</center>
 
 #### 1.2 Java EE
 
@@ -145,14 +145,14 @@ JAX-RS、JAX-WS、Web Services Metadata、Java API for XML Messaging、JAXR|
 |APM|J2EE Management|
 |Related|JAXB、JAXP、JDBC、JMX、JavaBeans Activation Framework、Streaming API for XML|
 
-<div align=center>![avatar](http://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/Servlet/note01_02.jpg)</div>
+<center>![avatar](http://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/Servlet/note01_02.jpg)</center>
 
 ## 2.Tomcat版本
 
 > - Tomcat是Java Servlet和JavaServer Pages技术的实现
 > - 不同版本的Servlet和JSP可使用的tomcat版本也不同，对应关系[参考官网](http://tomcat.apache.org/whichversion.html)如下
 
-<div align=center>![avatar](http://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/Servlet/note01_03.png)</div>
+<center>![avatar](http://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/Servlet/note01_03.png)</center>
 
 > 最后一栏是Tomcat对JDK版本的要求
 
