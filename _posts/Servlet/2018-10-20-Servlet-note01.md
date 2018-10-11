@@ -135,13 +135,10 @@ Each JSP page has a default mode for EL expression evaluation.The default value 
 
 |标准类别|具体项|
 |:-------|:-----|
-|Web app|
-Servlet、JavaServer Pages、Expression Language、JSTL、JavaServer Faces、WebSocket|
-|Enterprise app| 
-Dependency injection、Bean Validation、Enterprise JavaBeans、JPA、JMS、JTA、JavaMail、JCA
+|Web app|Servlet、JavaServer Pages、Expression Language、JSTL、JavaServer Faces、WebSocket|
+|Enterprise app|Dependency injection、Bean Validation、Enterprise JavaBeans、JPA、JMS、JTA、JavaMail、JCA
 Common Annotations|
-|Web services|
-JAX-RS、JAX-WS、Web Services Metadata、Java API for XML Messaging、JAXR|
+|Web services|JAX-RS、JAX-WS、Web Services Metadata、Java API for XML Messaging、JAXR|
 |APM|J2EE Management|
 |Related|JAXB、JAXP、JDBC、JMX、JavaBeans Activation Framework、Streaming API for XML|
 
