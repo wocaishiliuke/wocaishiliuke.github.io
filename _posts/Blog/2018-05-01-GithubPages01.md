@@ -17,6 +17,9 @@ tags:
 + I.简介
 + II.创建
 + III.目录介绍
++ IV.域名绑定
++ V.图床
++ VI.参考
 
 ---
 
@@ -231,7 +234,16 @@ http://blog.wocaishiliuke.cn
 blog.wocaishiliuke.cn
 ```
 
-## 5.参考
+# V.图床
+
+> 七牛云不再提供域名，需要使用自己备案的域名（要有对应的服务器实例）。当然还有一些免费的国外图床、微博等。这里使用阿里云的OSS
+
+- 购买OSS标准存储包（一年9米）
+- 创建Bucket，即可在Bucket下创建相关目录和上传图片
+- 设置Bucket访问权限为公共读，私有时，图片访问有过期时间
+
+
+# VI.参考
 
 - [Jekyll](https://www.jekyll.com.cn/docs/github-pages/)
 - [Jekyll主题](http://jekyllthemes.org/)
