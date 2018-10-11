@@ -157,7 +157,7 @@ JAX-RS、JAX-WS、Web Services Metadata、Java API for XML Messaging、JAXR|
 > - 不同版本的Servlet和JSP可使用的tomcat版本也不同，对应关系[参考官网](http://tomcat.apache.org/whichversion.html)如下
 
 <center>
-![avatar](http://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/Servlet/note01_03.png)
+![avatar][http://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/Servlet/note01_03.png]
 </center>
 
 > 最后一栏是Tomcat对JDK版本的要求
