@@ -87,11 +87,11 @@ tags:
 - JDK(Development Kit) = JRE + 开发工具(javac编译工具、jar打包工具、JavaDoc、java Debugger等)，SDK的一种
 - 开发需要JDK，仅运行Java程序使用JRE即可
 
-！[avatar](http://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/JavaSE/basic01/jdk-jre-jvm.jpg)
+![avatar](http://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/JavaSE/basic01/jdk-jre-jvm.jpg)
 
-！[avatar](http://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/JavaSE/basic01/how-java-program-runs.jpg)
+![avatar](http://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/JavaSE/basic01/how-java-program-runs.jpg)
 
-！[avatar](http://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/JavaSE/basic01/jvm-architecture.png)
+![avatar](http://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/JavaSE/basic01/jvm-architecture.png)
 
 #### 3.环境配置
 
