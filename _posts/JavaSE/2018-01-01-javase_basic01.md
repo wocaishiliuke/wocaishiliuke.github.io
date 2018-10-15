@@ -64,25 +64,34 @@ tags:
 
 #### 1.平台版本
 
-> 分为Java SE、Java ME、Java EE(WEB开发，包含servlet，jsp等)、JavaFX（富互联网应用）
+分为Java SE、Java ME、Java EE(WEB开发，包含servlet，jsp等)、JavaFX（富互联网应用）
 
-> [所有平台](https://docs.oracle.com/javaee/6/firstcup/doc/gkhoy.html)都包括a virtual machine and an API
-> - JVM：是个program，针对不同硬件和软件平台
-> - API：接口，用来编写应用
+- [所有平台版本](https://docs.oracle.com/javaee/6/firstcup/doc/gkhoy.html)都包括a virtual machine and an API
+- JVM：是个虚拟机程序，针对不同硬件和软件平台
+- API：core classes，用来编写应用
 
 > 其中Java SE平台版本中包含：
-> - API：提供了Java语言的基础核心功能。其中定义了basic types and objects，以及用于networking、security、database access、graphical user interface (GUI) development和XML parsing的类
-> - JVM
-> - 开发工具、部署技术、其他常用的类库和工具包
->
+
+- API：提供了Java语言的基础核心功能。其中定义了basic types and objects，以及用于networking、security、database access、graphical user interface (GUI) development和XML parsing的类
+- JVM
+- 开发工具、部署技术、其他常用的类库和工具包
+
+> 其中JAVASE5.0(1.5.0)/JDK5.0是里程碑版本(Tiger)，特性比较重要
+
 > Java EE平台版本建立在Java SE基础上，额外提供了Servlet、JSP等API
 
 #### 2.JVM、JRE和JDK
 
 - JVM(Virtual Machine)：针对不同硬件和软件平台
 - JRE(Runtime Environment) = JVM + java程序所需的核心类库等（运行环境）
-- JDK(Development Kit) = JRE + 开发工具(javac编译工具、jar打包工具、java等)，SDK的一种
-    - JAVASE5.0(1.5.0)/JDK5.0是里程碑版本(Tiger)，特性比较重要
+- JDK(Development Kit) = JRE + 开发工具(javac编译工具、jar打包工具、JavaDoc、java Debugger等)，SDK的一种
+- 开发需要JDK，仅运行Java程序使用JRE即可
+
+！[avatar](http://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/JavaSE/basic01/jdk-jre-jvm.jpg)
+
+！[avatar](http://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/JavaSE/basic01/how-java-program-runs.jpg)
+
+！[avatar](http://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/JavaSE/basic01/jvm-architecture.png)
 
 #### 3.环境配置
 

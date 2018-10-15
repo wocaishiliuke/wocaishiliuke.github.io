@@ -1,5 +1,5 @@
 ---
-title: web.xml版本
+title: Java Web中的版本
 date: 2018-10-20 00:00:00
 categories:
     - Servlet
@@ -9,18 +9,22 @@ tags:
     - Jsp
 ---
 
-本文介绍WEB项目部署描述符web.xml的版本问题。
+本文由WEB项目部署描述符web.xml的版本问题引出，故对Java中的Web技术栈版本稍作整理。包括Java SE、Java EE、Servlet等
 
 <!-- more -->
 
 ##### 目录
-+ I.问题描述
++ I.web.xml版本
 + II.解决方式
 + III.各技术版本
 
 ---
 
-# I.问题描述
+# I.web.xml版本
+
+实际是该Web项目使用的Servlet版本问题
+
+## 1.问题描述
 
 > 使用IDEA的maven-archetype-webapp架构或直接使用命令创建Web项目（其实都是maven-archetype-webapp:1.0），生成的WEB项目描述符web.xml为2.3版本
 
@@ -40,7 +44,7 @@ $ mvn archetype:generate -DgroupId=com.baicai.test -DartifactId=test-maven-web -
 </web-app>
 ```
 
-> 该web.xml 2.3版本过于老旧。如[默认忽略EL表达式](https://docs.oracle.com/cd/E19316-01/819-3669/6n5sg7b0v/index.html)等（不是不支持jsp中的EL，而是忽略，即原样输出。2.4版本及以上才默认不忽略jsp中的EL），所以有时需要更改
+> 该web.xml 2.3版本，对应Servlet 22.3，过于老旧。如[默认忽略EL表达式](https://docs.oracle.com/cd/E19316-01/819-3669/6n5sg7b0v/index.html)等（不是不支持jsp中的EL，而是忽略，即原样输出。2.4版本及以上才默认不忽略jsp中的EL），所以有时需要更改
 
 ```
 If isELIgnored is true, EL expressions are ignored when they appear in static text or tag attributes. If it is false, EL expressions are evaluated by the container only if the attribute has rtexprvalue set to true or the expression is a deferred expression.
@@ -48,23 +52,23 @@ If isELIgnored is true, EL expressions are ignored when they appear in static te
 Each JSP page has a default mode for EL expression evaluation.The default value of isELIgnored varies depending on the version of the web application deployment descriptor. The default mode for JSP pages delivered with a Servlet 2.4 descriptor is to evaluate EL expressions; this automatically provides the default that most applications want. The default mode for JSP pages delivered using a descriptor from Servlet 2.3 or before is to ignore EL expressions; this provides backward compatibility
 ```
 
-# II.解决方式
+## 2.解决方式
 
-## 1.修改单个页面
+#### 2.1 修改单个页面
 
-> 在每个页面中使用isELIgnored="false"，不忽略EL表达式
+在每个页面中使用isELIgnored="false"，不忽略EL表达式
 
 ```
 <%@ page language="java" contentType="text/html; charset=utf-8" pageEncoding="utf-8" isELIgnored="false"%>
 ```
 
-## 2.修改单个项目
+#### 2.2 修改单个项目
 
 以IDEA为例，修改web.xml的版本2.4及以上（默认识别EL），则jsp页面不需要再指定
 
-#### 方式1 直接替换
+###### 方式1：直接替换
 
-- 直接替换web.xml的头信息
+直接替换web.xml的头信息
 
 > 各版本web.xml的头声明，参见IDEA中settings中File and Code Templates中Web中的模板，如：
 
@@ -77,14 +81,14 @@ Each JSP page has a default mode for EL expression evaluation.The default value 
 </web-app>
 ```
 
-#### 方式2 借助IDE修改
+###### 方式2 借助IDE修改
 
 - 在Project Structure的Facets(or Modules)中，删除对应项目或模块的Web Deployment Descriptor，apply
 - 然后添加新的web.xml，选择合适的版本，如3.1
 
-## 3.修改maven-archetype-webapp中的模板
+#### 2.3 修改maven-archetype-webapp中的模板
 
-> 直接修改maven-archetype-webapp:1.0插件中的web.xml模板，只要本地仓库中的该插件不被替换，以后使用IDE或命令创建的maven WEB项目，都会使用修改后的web.xml模板
+直接修改maven-archetype-webapp:1.0插件中的web.xml模板，只要本地仓库中的该插件不被替换，以后使用IDE或命令创建的maven WEB项目，都会使用修改后的web.xml模板
 
 - step1：本地仓库找到该插件jar
 
@@ -95,19 +99,16 @@ Each JSP page has a default mode for EL expression evaluation.The default value 
 - step2：右键Open With Archive Manager，在archetype-resources/src/main/webapp/WEB-INF下找到web.xml
 - step3：修改该模板即可
 
-# III.各技术版本
-
-## 1.JAVA版本
+# II.Java版本
 
 主要有Java SE版本、JDK版本、Java EE版本
 
-- 关于Java SE和JDK的命名[参考官网](https://www.oracle.com/technetwork/java/javase/namechange-140185.html)
-- 虽然从J2SE 1.5开始，5/6/7...作为发布的生产版本，但仍然保留了1.5.0（1.5）...等作为开发版本。所以J2SE 5.0 = J2SE 5 = J2SE 1.5.0 
-- 从6开始，更名为Java SE，即Java SE 7=Java SE 1.7.0=Java SE 1.7，JDK 7=JDK 1.7.0=JDK 1.7
+## 1.Java SE和JDK
 
-#### 1.1 Java SE和JDK
+> 关于Java SE和JDK的命名与版本[参考官网](https://www.oracle.com/technetwork/java/javase/namechange-140185.html)。从J2SE 1.5，使用5/6/7...作为发布版本，但仍然保留了1.5.0（1.5）...作为开发版本。所以J2SE 5.0 = J2SE 5 = J2SE 1.5.0
 
-- Java SE是Java的一个平台版本，而JDK是开发工具包。JDK和Java SE的版本发布相同
+- Java SE是Java的一个平台版本，包含Java的核心API：Collection、I/O、JDBC、i18n等
+- 而JDK是开发工具包。JDK和Java SE的版本发布相同
 - JDK，全称Java SE Development Kit，区别于Oracle的Java EE Development Kit
 - JDK包含了Java SE的JVM和API，额外的还有其他编译、打包等开发工具
 - Java EE SDK比JDK更多jar，如Servlet、JSP、JPA、JSTL等，支持企业级开发
@@ -117,6 +118,8 @@ Each JSP page has a default mode for EL expression evaluation.The default value 
 ![avatar](http://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/Servlet/note01_01.png)
 
 #### 1.2 Java EE
+
+- 从6开始，更名为Java SE，即Java SE 7=Java SE 1.7.0=Java SE 1.7，JDK 7=JDK 1.7.0=JDK 1.7
 
 > - 开始与Servlet，，随后EL和JSTL出现使得JSP代码更简化
 > - 前名J2EE（Java 2 Platform Enterprise Edition），后名Java EE（Java Platform Enterprise Edition），2018.3更名Jakarta EE
