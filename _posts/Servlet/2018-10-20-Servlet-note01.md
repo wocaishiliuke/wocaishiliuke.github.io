@@ -14,9 +14,9 @@ tags:
 <!-- more -->
 
 ##### 目录
-+ I.web.xml版本
-+ II.解决方式
-+ III.各技术版本
++ I.web.xml版本问题
++ II.Java中的版本
++ III.Server版本
 
 ---
 
@@ -117,7 +117,7 @@ Each JSP page has a default mode for EL expression evaluation.The default value 
 
 ![avatar](http://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/Servlet/note01_01.png)
 
-#### 1.2 Java EE
+## 2.Java EE
 
 - 从6开始，更名为Java SE，即Java SE 7=Java SE 1.7.0=Java SE 1.7，JDK 7=JDK 1.7.0=JDK 1.7
 
@@ -136,7 +136,7 @@ Each JSP page has a default mode for EL expression evaluation.The default value 
 |J2EE 1.3 |September 24, 2001|Servlet 2.3|JSP 1.2| | | |
 |J2EE 1.4 |November 11, 2003|Servlet 2.4|JSP 2.0| | | |
 |Java EE 5 |May 11, 2006|Servlet 2.5|JSP 2.1|JSTL 1.2|JSF 1.2| |
-|Java EE 6 |December 10, 2009|Servlet 3.0|JSP 2.2|JSTL 1.2|JS 2.0|EL 2.2|
+|Java EE 6 |December 10, 2009|Servlet 3.0|JSP 2.2|JSTL 1.2|JSF 2.0|EL 2.2|
 |Java EE 7 |June 12, 2013|Servlet 3.1|JSP 2.3|JSTL 1.2|JSF 2.2|EL 3.0|
 |Java EE 8 |August 31, 2017|Servlet 4.0|JSP 2.3|JSTL 1.2|JSF 2.3|EL 3.0|
 
@@ -168,28 +168,18 @@ Common Annotations|
 ![avatar](http://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/Servlet/note01_02.jpg)
 
 
-#### 1.3 EL
+## 3.EL
 
 > EL原名SPEL（Simplest Possible Expression Language）
 
 [参考](https://www.javasprint.com/java_training_tutorial_blog/java_jee_jsp_servlet_story_jsf_jstl_el_history.php)
 
-#### 1.4 JSTL
+## 4.JSTL
 
-#### 1.5 JSF
+#### 各版本JSTL的使用
 
-#### 各Servlet版本使用JSTL
-
-###### Servlet 2.4
+###### JSTL 1.1
 ```
-<?xml version="1.0" encoding="UTF-8"?>
-<web-app version="2.4"
-         xmlns="http://java.sun.com/xml/ns/j2ee"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee http://java.sun.com/xml/ns/j2ee/web-app_2_4.xsd" >
-
-</web-app>
-
 <dependency>
     <groupId>javax.servlet</groupId>
     <artifactId>jstl</artifactId>
@@ -202,17 +192,9 @@ Common Annotations|
 </dependency>
 ```
 
-###### Servlet 2.5
+###### JSTL 1.2
 
 ```
-<?xml version="1.0" encoding="UTF-8"?>
-<web-app xmlns="http://java.sun.com/xml/ns/javaee"
-           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-           xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
-           version="2.5">
-
-</web-app>
-
 <dependency>
     <groupId>javax.servlet</groupId>
     <artifactId>jstl</artifactId>
@@ -220,46 +202,25 @@ Common Annotations|
 </dependency>
 ```
 
-###### Servlet 3.0
+#### 1.5 JSF
 
-```
-<?xml version="1.0" encoding="UTF-8"?>
-<web-app xmlns="http://java.sun.com/xml/ns/javaee"
-           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-           xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
-           version="3.0">
+JSF(JavaServer Faces)是基于服务器端组件的用户界面框架，面向组件和事件驱动模型，用于开发WEB应用
 
-</web-app>
+> 在JavaEE 5开始，JSF 1.2才被引入（同时引入的还有JSTL 1.2，EL在JavaEE 6才被引入）。但JSF和JSTL都没有被随后的Tomcat等barebones Server引入。使用这些服务器时，如果需要，必须单独引入JSF和JSTL的包
 
-<dependency>
-    <groupId>javax.servlet</groupId>
-    <artifactId>javax.servlet-api</artifactId>
-    <version>3.0.1</version>
-    <scope>provided</scope>
-</dependency>
+JSF的历史版本参考[Wikipedia](https://en.wikipedia.org/wiki/JavaServer_Faces)
 
-<dependency>
-    <groupId>javax.servlet</groupId>
-    <artifactId>jstl</artifactId>
-    <version>1.2</version>
-</dependency>
-```
+|JSF Version|Released in|
+|JSF 1.0 |2004.3.11|
+|JSF 1.1 |2004.5.27|
+|JSF 1.2 |2006.5.11 with JavaEE 5|
+|JSF 2.0 |10 Dec 2009 with JEE 6. It uses Facelets.|
+|JSF 2.1 |22 Oct 2010|
+|JSF 2.2 |said to release by end of 2012
 
-###### Servlet 3.1
+# III.Server版本
 
-```
-<?xml version="1.0" encoding="UTF-8"?>
-<web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd"
-         version="3.1">
-</web-app>
-```
-
-
-## 2.常见Server版本
-
-#### 2.1 Tomcat
+## 1.Tomcat
 
 > - Tomcat是Java Servlet和JavaServer Pages技术的实现
 > - 不同版本的Servlet和JSP可使用的tomcat版本也不同，对应关系[参考官网](http://tomcat.apache.org/whichversion.html)如下
@@ -268,7 +229,7 @@ Common Annotations|
 
 > 最后一栏是Tomcat对JDK版本的要求
 
-#### 2.2 [Jetty](http://www.eclipse.org/jetty/about.html)
+## 2.[Jetty](http://www.eclipse.org/jetty/about.html)
 
 |Version|Year|Home|JVM|Protocols|Servlet|JSP|Status|
 |:------|:---|:---|:--|:--------|:------|:--|:-----|
