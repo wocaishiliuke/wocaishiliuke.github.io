@@ -141,7 +141,7 @@ Each JSP page has a default mode for EL expression evaluation.The default value 
 |Java EE 8 |August 31, 2017|Servlet 4.0|JSP 2.3|JSTL 1.2|JSF 2.3|EL 3.0|
 
 > - Java EE开始于Servlet，后来加入JSP。即早期的J2EE只包含JSP和Servlet，并命名为J2EE
-> - 随后EL、JSTL的出现，是为了简化JSP代码，但它们只是独立的包，并没有加入J2EE，此阶段开发时需要单独加入这两个依赖到IDE和Tomcat
+> - 随后EL、JSTL的出现，是为了简化JSP代码，但它们只是独立的包，此阶段开发时需要单独加入这两个依赖到IDE和Tomcat
 > - 在Java EE 5及以后，才将JSTL和JSF引入，但此时对应的Tomcat并没有引入JSTL和JSF，所以使用Tomcat的Java EE项目需要单独引入这两个依赖，还要注意版本对应（参考下文Tomcat版本）。如Tomcat的示例，在webapps/examples/WEB-INF/lib引入的，可参考[Apache Taglibs](http://tomcat.apache.org/taglibs.html)（Apache Standard Taglib是JSTL的实现）
 > - 在Java EE 6才引入EL。不像JSTL和JSF，对应的Tomcat也加入了EL依赖
 
@@ -167,14 +167,51 @@ Common Annotations|
 
 ![avatar](http://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/Servlet/note01_02.jpg)
 
+## 3.JSP
+
+JavaServer Pages（JSP）是一项基于HTML、XML和其他文件类型，动态生成web页面的技术，由Sun Microsystems在1999发布。JSP和PHP、ASP相似，但它使用的是Java语言。也可以把JSP看做扩展版的Servlet，因为它提供了EL、JSTL等更多功能
+
+> EL和JSTL的出现，是为了简化和方便管理JSP代码。不使用scriplets（<% Java %>）就可以编写JSP
+
+- JSP中包含了HTML tag和JSP tag
+- JSP1.1引入了tag libraries标签库，来扩展standard JSP syntax，其中一个standard tag library，就是JSTL（随后一些MVC框架，如Struct、SpringMVC也引入了相应的标签）
+- JSP1.2提升了对tag libraries的支持，JSP1.2发布后，JSTL开始形成，JSTL1.0单独发布（所以JSTL1.0需要在支持JSP1.2的JSP Container中使用）。EL则开始于JSTL1.0。
+- JSP2.0（J2EE 4）开始在JSP中引入EL。JSP2.0发布后，JSTL1.1发布（所以JSTL1.1需要一个支持JSP2.0的JSP Container）。有了JSTL和EL后，编写JSP可以不需要熟悉Java语言，即不使用scriplets，而是使用自定标签
+- JSP 2.1（J2EE 5）
+
+
+
+
+
+
+#### 参考
+
+- [jsp tutorial](https://www.javatpoint.com/jsp-tutorial)
 
 ## 3.EL
 
 > EL原名SPEL（Simplest Possible Expression Language）
 
+- EL起始于JSTL 1.0（而非JSP）。在加入J2EE 5之前，JSTL是独立发展的（没有加入J2EE）
+- 2001年发布的JSP 1.2（J2EE 3）期间，市场上还没有EL
+- 2002.6.21发布了有EL支持的JSTL1.0
+- 随后发布的JSP2.0（J2EE 4）增加了EL支持，JSF也增加了自己的EL版本，所以此时的EL在JSP和JSF中是不同的
+- JSP 2.1（J2EE 5）开始支持unified EL（JSP 2.0和JSF 1.0的统一EL版本)。有了unified EL，JSTL 1.2和JSF 1.2都加入了J2EE 5
+
 [参考](https://www.javasprint.com/java_training_tutorial_blog/java_jee_jsp_servlet_story_jsf_jstl_el_history.php)
 
 ## 4.JSTL
+
+> [JSTL](https://docs.oracle.com/javaee/5/tutorial/doc/bnake.html)提供了一组tags来简化JSP的开发。
+
+|Area|Prefix|Subfunction|URL|
+|:---|:-----|:----------|:--|
+|Core|c|Variable support、URL management、Flow control、Miscellaneous|http://java.sun.com/jsp/jstl/core|
+|XML|x|Core、Flow control、Transformation|http://java.sun.com/jsp/jstl/xml|
+|I18N|fmt|Locale、Message formatting、Number and date formatting|http://java.sun.com/jsp/jstl/fmt|
+|Database|sql|SQL|http://java.sun.com/jsp/jstl/sql|
+|Functions|fn|Collection length、String manipulation|http://java.sun.com/jsp/jstl/functions|
+
 
 #### 各版本JSTL的使用
 
@@ -214,9 +251,11 @@ JSF的历史版本参考[Wikipedia](https://en.wikipedia.org/wiki/JavaServer_Fac
 |JSF 1.0 |2004.3.11|
 |JSF 1.1 |2004.5.27|
 |JSF 1.2 |2006.5.11 with JavaEE 5|
-|JSF 2.0 |10 Dec 2009 with JEE 6. It uses Facelets.|
-|JSF 2.1 |22 Oct 2010|
-|JSF 2.2 |said to release by end of 2012
+|JSF 2.0 |2009.12.10 with JEE 6.It uses Facelets.|
+|JSF 2.1 |2010.11.22|
+|JSF 2.2 |2013.5.21|
+|JSF 2.3 |2017.3.28|
+
 
 # III.Server版本
 
