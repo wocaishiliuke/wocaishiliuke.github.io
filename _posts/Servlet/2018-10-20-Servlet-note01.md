@@ -26,7 +26,7 @@ tags:
 
 ## 1.问题描述
 
-> 使用IDEA的maven-archetype-webapp架构或直接使用命令创建Web项目（其实都是maven-archetype-webapp:1.0），生成的WEB项目描述符web.xml为2.3版本
+> 使用IDEA的maven-archetype-webapp骨架或直接使用命令创建Web项目（其实都是maven-archetype-webapp:1.0插件），生成的WEB项目描述符web.xml为2.3版本
 
 ```
 $ mvn archetype:generate -DgroupId=com.baicai.test -DartifactId=test-maven-web -Dversion=1.0.0-SNAPSHOT -DarchetypeArtifactId=maven-archetype-webapp
@@ -44,7 +44,7 @@ $ mvn archetype:generate -DgroupId=com.baicai.test -DartifactId=test-maven-web -
 </web-app>
 ```
 
-> 该web.xml 2.3版本，对应Servlet 22.3，过于老旧。如[默认忽略EL表达式](https://docs.oracle.com/cd/E19316-01/819-3669/6n5sg7b0v/index.html)等（不是不支持jsp中的EL，而是忽略，即原样输出。2.4版本及以上才默认不忽略jsp中的EL），所以有时需要更改
+> 该web.xml 2.3版本，对应Servlet 2.3，过于老旧。如[默认忽略EL表达式](https://docs.oracle.com/cd/E19316-01/819-3669/6n5sg7b0v/index.html)等（不是不支持jsp中的EL，而是忽略，即原样输出。2.4版本及以上才默认不忽略jsp中的EL），所以有时需要更改
 
 ```
 If isELIgnored is true, EL expressions are ignored when they appear in static text or tag attributes. If it is false, EL expressions are evaluated by the container only if the attribute has rtexprvalue set to true or the expression is a deferred expression.
@@ -81,7 +81,7 @@ Each JSP page has a default mode for EL expression evaluation.The default value 
 </web-app>
 ```
 
-###### 方式2 借助IDE修改
+###### 方式2：借助IDE修改
 
 - 在Project Structure的Facets(or Modules)中，删除对应项目或模块的Web Deployment Descriptor，apply
 - 然后添加新的web.xml，选择合适的版本，如3.1
@@ -90,13 +90,13 @@ Each JSP page has a default mode for EL expression evaluation.The default value 
 
 直接修改maven-archetype-webapp:1.0插件中的web.xml模板，只要本地仓库中的该插件不被替换，以后使用IDE或命令创建的maven WEB项目，都会使用修改后的web.xml模板
 
-- step1：本地仓库找到该插件jar
+- step1：本地仓库的插件jar
 
 ```
 /home/top/maven_repository/org/apache/maven/archetypes/maven-archetype-webapp/1.0
 ```
 
-- step2：右键Open With Archive Manager，在archetype-resources/src/main/webapp/WEB-INF下找到web.xml
+- step2：Open With Archive Manager，在archetype-resources/src/main/webapp/WEB-INF下找到web.xml
 - step3：修改该模板即可
 
 # II.Java版本
@@ -119,9 +119,7 @@ Each JSP page has a default mode for EL expression evaluation.The default value 
 
 ## 2.Java EE
 
-- 从6开始，更名为Java SE，即Java SE 7=Java SE 1.7.0=Java SE 1.7，JDK 7=JDK 1.7.0=JDK 1.7
-
-> - 开始与Servlet，，随后EL和JSTL出现使得JSP代码更简化
+> - Java EE初期只包含Servlet和JSP，随后JSTL、JSF和EL等才加入
 > - 前名J2EE（Java 2 Platform Enterprise Edition），后名Java EE（Java Platform Enterprise Edition），2018.3更名Jakarta EE
 > - 1998年发表JDK1.2时，Java开始分为3个平台版本J2SE、J2EE、J2ME
 > - 2006年发布的SE平台改名为Java SE 6，EE平台版本也更名为Java EE 5
@@ -132,13 +130,13 @@ Each JSP page has a default mode for EL expression evaluation.The default value 
 |:---|:---|:-|:-|:-|:-|:-|
 |Servlet 1.1|Jan 1999| | | | | |
 |JSP 1.0|Jun 1999| | | | | |
-|J2EE 1.2 |December 12, 1999|Servlet 2.2|JSP 1.1| | | |
-|J2EE 1.3 |September 24, 2001|Servlet 2.3|JSP 1.2| | | |
-|J2EE 1.4 |November 11, 2003|Servlet 2.4|JSP 2.0| | | |
-|Java EE 5 |May 11, 2006|Servlet 2.5|JSP 2.1|JSTL 1.2|JSF 1.2| |
-|Java EE 6 |December 10, 2009|Servlet 3.0|JSP 2.2|JSTL 1.2|JSF 2.0|EL 2.2|
-|Java EE 7 |June 12, 2013|Servlet 3.1|JSP 2.3|JSTL 1.2|JSF 2.2|EL 3.0|
-|Java EE 8 |August 31, 2017|Servlet 4.0|JSP 2.3|JSTL 1.2|JSF 2.3|EL 3.0|
+|J2EE 1.2 |1999.12.12|Servlet 2.2|JSP 1.1| | | |
+|J2EE 1.3 |2001.9.24|Servlet 2.3|JSP 1.2| | | |
+|J2EE 1.4 |2003.11.11|Servlet 2.4|JSP 2.0| | | |
+|Java EE 5 |2006.5.11|Servlet 2.5|JSP 2.1|JSTL 1.2|JSF 1.2| |
+|Java EE 6 |2009.12.10|Servlet 3.0|JSP 2.2|JSTL 1.2|JSF 2.0|EL 2.2|
+|Java EE 7 |2013.6.12|Servlet 3.1|JSP 2.3|JSTL 1.2|JSF 2.2|EL 3.0|
+|Java EE 8 |2017.8.31|Servlet 4.0|JSP 2.3|JSTL 1.2|JSF 2.3|EL 3.0|
 
 > - Java EE开始于Servlet，后来加入JSP。即早期的J2EE只包含JSP和Servlet，并命名为J2EE
 > - 随后EL、JSTL的出现，是为了简化JSP代码，但它们只是独立的包，此阶段开发时需要单独加入这两个依赖到IDE和Tomcat
@@ -174,9 +172,9 @@ JavaServer Pages（JSP）是一项基于HTML、XML和其他文件类型，动态
 > EL和JSTL的出现，是为了简化和方便管理JSP代码。不使用scriplets（<% Java %>）就可以编写JSP
 
 - JSP中包含了HTML tag和JSP tag
-- JSP1.1引入了tag libraries标签库，来扩展standard JSP syntax，其中一个standard tag library，就是JSTL（随后一些MVC框架，如Struct、SpringMVC也引入了相应的标签）
-- JSP1.2提升了对tag libraries的支持，JSP1.2发布后，JSTL开始形成，JSTL1.0单独发布（所以JSTL1.0需要在支持JSP1.2的JSP Container中使用）。EL则开始于JSTL1.0。
-- JSP2.0（J2EE 4）开始在JSP中引入EL。JSP2.0发布后，JSTL1.1发布（所以JSTL1.1需要一个支持JSP2.0的JSP Container）。有了JSTL和EL后，编写JSP可以不需要熟悉Java语言，即不使用scriplets，而是使用自定标签
+- JSP 1.1引入了tag libraries标签库，来扩展standard JSP syntax，其中一个standard tag library，就是JSTL（随后一些MVC框架，如Struct、SpringMVC也引入了相应的标签）
+- JSP 1.2提升了对tag libraries的支持，JSP 1.2发布后，JSTL开始形成，JSTL 1.0单独发布（所以JSTL 1.0需要在支持JSP 1.2的JSP Container中使用）。EL则开始于JSTL 1.0。
+- JSP 2.0（J2EE 4）开始引入EL。JSP 2.0发布后，JSTL 1.1发布（所以JSTL 1.1需要在支持JSP 2.0的JSP Containe中使用r）。有了JSTL和EL后，编写JSP可以不需要熟悉Java语言，即不使用scriplets，而是使用自定标签
 - JSP 2.1（J2EE 5）
 
 
