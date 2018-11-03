@@ -128,7 +128,7 @@ Each JSP page has a default mode for EL expression evaluation.The default value 
 
 |版本|日期| | | | | |
 |:---|:---|:-|:-|:-|:-|:-|
-|Servlet 1.1|Jan 1999| | | | | |
+|Servlet 2.1|Jan 1999| | | | | |
 |JSP 1.0|Jun 1999| | | | | |
 |J2EE 1.2 |1999.12.12|Servlet 2.2|JSP 1.1| | | |
 |J2EE 1.3 |2001.9.24|Servlet 2.3|JSP 1.2| | | |
@@ -138,9 +138,9 @@ Each JSP page has a default mode for EL expression evaluation.The default value 
 |Java EE 7 |2013.6.12|Servlet 3.1|JSP 2.3|JSTL 1.2|JSF 2.2|EL 3.0|
 |Java EE 8 |2017.8.31|Servlet 4.0|JSP 2.3|JSTL 1.2|JSF 2.3|EL 3.0|
 
-> - Java EE开始于Servlet，后来加入JSP。即早期的J2EE只包含JSP和Servlet，并命名为J2EE
+> - 1998.5 Sun Microsystems宣布了JPE项目（Java Professional Edition）。Java EE开始于Servlet，后来加入JSP。即早期的J2EE只包含JSP和Servlet，并命名为J2EE
 > - 随后EL、JSTL的出现，是为了简化JSP代码，但它们只是独立的包，此阶段开发时需要单独加入这两个依赖到IDE和Tomcat
-> - 在Java EE 5及以后，才将JSTL和JSF引入，但此时对应的Tomcat并没有引入JSTL和JSF，所以使用Tomcat的Java EE项目需要单独引入这两个依赖，还要注意版本对应（参考下文Tomcat版本）。如Tomcat的示例，在webapps/examples/WEB-INF/lib引入的，可参考[Apache Taglibs](http://tomcat.apache.org/taglibs.html)（Apache Standard Taglib是JSTL的实现）
+> - 在Java EE 5及以后，才将JSTL和JSF引入，但此时对应的Tomcat并没有引入JSTL和JSF，所以使用Tomcat的Java EE项目需要单独引入这两个依赖，还要注意版本对应（参考下文Tomcat版本）。如Tomcat的示例项目中，是在webapps/examples/WEB-INF/lib引入的，可参考[Apache Taglibs](http://tomcat.apache.org/taglibs.html)（Apache Standard Taglib是JSTL的实现）
 > - 在Java EE 6才引入EL。不像JSTL和JSF，对应的Tomcat也加入了EL依赖
 
 |JEE Version |TOMCAT Version|
@@ -150,13 +150,12 @@ Each JSP page has a default mode for EL expression evaluation.The default value 
 |JEE5 support Servlet 2.5, JSP 2.1, JSTL 1.2, JSF 1.2|Tomcat6 support Servlet 2.5, JSP 2.1, EL 2.1. No JSTL.No JSF|
 |JEE6 support Servlet 3.0, JSP 2.2, EL 2.2, JSTL 1.2, JSF 2.0|Tomcat7 support Servlet 3.0, JSP 2.2, EL 2.2 as well|
 
-> - EE平台版本一般比同版本的SE版本晚。它基于SE，另由一系列技术标准组成。以Java EE 7为例，包含的specifications如下
+> - EE平台版本一般比同版本的SE晚。它基于SE，另由其他技术标准组成。以Java EE 7为例，包含的specifications如下
 
 |标准类别|具体项|
 |:-------|:-----|
 |Web app|Servlet、JavaServer Pages、Expression Language、JSTL、JavaServer Faces、WebSocket|
-|Enterprise app|Dependency injection、Bean Validation、Enterprise JavaBeans、JPA、JMS、JTA、JavaMail、JCA
-Common Annotations|
+|Enterprise app|Dependency injection、Bean Validation、Enterprise JavaBeans、JPA、JMS、JTA、JavaMail、JCA Common Annotations|
 |Web services|JAX-RS、JAX-WS、Web Services Metadata、Java API for XML Messaging、JAXR|
 |APM|J2EE Management|
 |Related|JAXB、JAXP、JDBC、JMX、JavaBeans Activation Framework、Streaming API for XML|
@@ -165,7 +164,22 @@ Common Annotations|
 
 ![avatar](http://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/Servlet/note01_02.jpg)
 
-## 3.JSP
+## 3.Servlet
+
+|Servlet version|Released|Specification|Platform|Important Changes|
+|Servlet 4.0|2017.9|JSR 369|Java EE 8|HTTP/2|
+|Servlet 3.1|2013.5|JSR 340|Java EE 7|Non-blocking I/O、HTTP protocol、upgrade mechanism (WebSocket)|
+|Servlet 3.0|2009.12|JSR 315|Java EE 6、Java SE 6|Pluggability、Ease of development、Async Servlet、Security、File Uploading|
+|Servlet 2.5|2005.9|JSR 154|Java EE 5、Java SE 5|Requires Java SE 5、supports annotation|
+|Servlet 2.4|2003.11|JSR 154|J2EE 1.4、J2SE 1.3|web.xml uses XML Schema|
+|Servlet 2.3|2001.8|JSR 53|J2EE 1.3、J2SE 1.2|Addition of Filter|
+|Servlet 2.2|1999.8|JSR 902、JSR 903|J2EE 1.2、J2SE 1.2|Becomes part of J2EE, introduced independent web applications in .war files|
+|Servlet 2.1|1998.11|2.1a|Unspecified First official specification, added RequestDispatcher、ServletContext|
+|Servlet 2.0|1997.12|N/A|JDK 1.1|Part of April 1998 Java Servlet Development Kit 2.0|
+|Servlet 1.0|1996.12|N/A|Part of June 1997 Java Servlet Development Kit (JSDK) 1.0|
+
+
+## 4.JSP
 
 JavaServer Pages（JSP）是一项基于HTML、XML和其他文件类型，动态生成web页面的技术，由Sun Microsystems在1999发布。JSP和PHP、ASP相似，但它使用的是Java语言。也可以把JSP看做扩展版的Servlet，因为它提供了EL、JSTL等更多功能
 
@@ -173,34 +187,28 @@ JavaServer Pages（JSP）是一项基于HTML、XML和其他文件类型，动态
 
 - JSP中包含了HTML tag和JSP tag
 - JSP 1.1引入了tag libraries标签库，来扩展standard JSP syntax，其中一个standard tag library，就是JSTL（随后一些MVC框架，如Struct、SpringMVC也引入了相应的标签）
-- JSP 1.2提升了对tag libraries的支持，JSP 1.2发布后，JSTL开始形成，JSTL 1.0单独发布（所以JSTL 1.0需要在支持JSP 1.2的JSP Container中使用）。EL则开始于JSTL 1.0。
-- JSP 2.0（J2EE 4）开始引入EL。JSP 2.0发布后，JSTL 1.1发布（所以JSTL 1.1需要在支持JSP 2.0的JSP Containe中使用r）。有了JSTL和EL后，编写JSP可以不需要熟悉Java语言，即不使用scriplets，而是使用自定标签
-- JSP 2.1（J2EE 5）
+- JSP 1.2提升了对tag libraries的支持，JSP 1.2发布后，JSTL开始形成，JSTL 1.0单独发布（所以JSTL 1.0需要在支持JSP 1.2的JSP Container中使用）(JSTL起始于JSP，而EL起始于JSTL）
+- JSP 2.0（J2EE 4）开始引入EL。JSP 2.0发布后，JSTL 1.1发布（所以JSTL 1.1需要在支持JSP 2.0的JSP Container中使用）。有了JSTL和EL后，编写JSP可以不需要熟悉Java语言，即不使用scriplets，而是使用自定标签
+- JSP 2.1（J2EE 5）创造了unified EL（统一了JSP 2.0和JSF 1.0中的EL）
 
 
+> 参考[jsp tutorial](https://www.javatpoint.com/jsp-tutorial)
 
 
+## 5.EL
 
+原名SPEL（Simplest Possible Expression Language）
 
-#### 参考
-
-- [jsp tutorial](https://www.javatpoint.com/jsp-tutorial)
-
-## 3.EL
-
-> EL原名SPEL（Simplest Possible Expression Language）
-
-- EL起始于JSTL 1.0（而非JSP）。在加入J2EE 5之前，JSTL是独立发展的（没有加入J2EE）
-- 2001年发布的JSP 1.2（J2EE 3）期间，市场上还没有EL
-- 2002.6.21发布了有EL支持的JSTL1.0
-- 随后发布的JSP2.0（J2EE 4）增加了EL支持，JSF也增加了自己的EL版本，所以此时的EL在JSP和JSF中是不同的
+- EL起始于JSTL 1.0，而非JSP。2002.6.21发布了支持EL的JSTL 1.0
+- 在此之前（2001年发布的JSP 1.2（J2EE 3）期间），市场上还没有EL
+- JSP 2.0（J2EE 4）开始支持EL，将Java代码从JSP中分离。JSF也增加了自己的EL版本，此时JSP和JSF中的EL是不同的
 - JSP 2.1（J2EE 5）开始支持unified EL（JSP 2.0和JSF 1.0的统一EL版本)。有了unified EL，JSTL 1.2和JSF 1.2都加入了J2EE 5
+- EL 2.2被宣布加入J2EE 6。所以实际上J2EE 6之前EL已经加入，只是没有版本号（如J2EE 5中JSP和JSF中的unified EL、J2EE 4中的JSP 2.0中的EL）
 
-[参考](https://www.javasprint.com/java_training_tutorial_blog/java_jee_jsp_servlet_story_jsf_jstl_el_history.php)
 
-## 4.JSTL
+## 6.JSTL
 
-> [JSTL](https://docs.oracle.com/javaee/5/tutorial/doc/bnake.html)提供了一组tags来简化JSP的开发。
+[JSTL](https://docs.oracle.com/javaee/5/tutorial/doc/bnake.html)提供了一组tags来简化JSP的开发。
 
 |Area|Prefix|Subfunction|URL|
 |:---|:-----|:----------|:--|
@@ -210,10 +218,15 @@ JavaServer Pages（JSP）是一项基于HTML、XML和其他文件类型，动态
 |Database|sql|SQL|http://java.sun.com/jsp/jstl/sql|
 |Functions|fn|Collection length、String manipulation|http://java.sun.com/jsp/jstl/functions|
 
+> 由于JSTL没有加入Tomcat，所以需要单独引入依赖。不同版本JSTL的使用稍有不同（不同Tomcat版本中的JSTL版本见Tomcat版本详述）
 
-#### 各版本JSTL的使用
+|JSTL Ver|Rel Date|  
+|JSTL 1.0 (Std 1.0)|2002.6.21|requires a JSP container (like Tomcat 4) that supports JSP 1.2 spec|
+|JSTL 1.1 (Std 1.1)|2004.1.30|requires a JSP container (like Tomcat 5) that supports JSP 2.0 spec|
+|JSTL 1.2|2006 with JEE5|  
 
-###### JSTL 1.1
+#### JSTL 1.1
+
 ```
 <dependency>
     <groupId>javax.servlet</groupId>
@@ -227,7 +240,7 @@ JavaServer Pages（JSP）是一项基于HTML、XML和其他文件类型，动态
 </dependency>
 ```
 
-###### JSTL 1.2
+#### JSTL 1.2
 
 ```
 <dependency>
@@ -237,7 +250,8 @@ JavaServer Pages（JSP）是一项基于HTML、XML和其他文件类型，动态
 </dependency>
 ```
 
-#### 1.5 JSF
+
+## 7.JSF
 
 JSF(JavaServer Faces)是基于服务器端组件的用户界面框架，面向组件和事件驱动模型，用于开发WEB应用
 
@@ -259,12 +273,12 @@ JSF的历史版本参考[Wikipedia](https://en.wikipedia.org/wiki/JavaServer_Fac
 
 ## 1.Tomcat
 
-> - Tomcat是Java Servlet和JavaServer Pages技术的实现
-> - 不同版本的Servlet和JSP可使用的tomcat版本也不同，对应关系[参考官网](http://tomcat.apache.org/whichversion.html)如下
+Tomcat是Java Servlet和JavaServer Pages技术的实现。不同版本的Servlet和JSP可使用的tomcat版本也不同，对应关系[参考官网](http://tomcat.apache.org/whichversion.html)如下
 
 ![avatar](http://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/Servlet/note01_03.png)
 
 > 最后一栏是Tomcat对JDK版本的要求
+
 
 ## 2.[Jetty](http://www.eclipse.org/jetty/about.html)
 
