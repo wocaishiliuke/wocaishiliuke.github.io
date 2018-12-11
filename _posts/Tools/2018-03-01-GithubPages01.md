@@ -2,11 +2,10 @@
 title: Github Pages + Jekyll博客搭建
 date: 2018-03-01 00:00:00
 categories:
-    - Blog
+    - Tools
 tags:
     - Github Pages
     - Jekyll
-    - Blog
 ---
 
 本文介绍使用Github Pages和Jekyll搭建博客。该方式方便简单，不需要个人服务器、管理域名等，和github浑然一体，方便管理和更新。
