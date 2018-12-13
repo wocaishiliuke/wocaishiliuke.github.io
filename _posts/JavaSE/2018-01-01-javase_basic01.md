@@ -62,6 +62,9 @@ tags:
 - 前名"Oak"（橡树）
 - 特点：开源、跨系统平台(write once,run anywhere! 各系统的JVM，JVM负责Java程序运行)、面向对象
 
+> - Java的跨平台：JDK或JRE级别。即源码和字节码文件（编译）对不同平台是相同的（write once），只是JDK版本随平台不同而不同
+> - C或C++的跨平台：在编译器或代码级别实现跨平台，即编码会根据系统平台不同而有差异
+
 #### 1.平台版本
 
 分为Java SE、Java ME、Java EE(WEB开发，包含servlet，jsp等)、JavaFX（富互联网应用）
@@ -76,11 +79,18 @@ tags:
 - JVM
 - 开发工具、部署技术、其他常用的类库和工具包
 
-> 其中JAVASE5.0(1.5.0)/JDK5.0是里程碑版本(Tiger)，特性比较重要
+> JAVASE5.0(1.5.0)/JDK5.0是里程碑版本(Tiger)，特性比较重要
 
 > Java EE平台版本建立在Java SE基础上，额外提供了Servlet、JSP等API
 
+JavaSE8 at a glance:
+
+![avatar](http://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/JavaSE/basic01/Javase8-at-a-glance.png)
+
+
 #### 2.JVM、JRE和JDK
+
+> Java有内存管理（经久不衰的原因），所以JVM要深入了解
 
 - JVM(Virtual Machine)：针对不同硬件和软件平台
 - JRE(Runtime Environment) = JVM + java程序所需的核心类库等（运行环境）
