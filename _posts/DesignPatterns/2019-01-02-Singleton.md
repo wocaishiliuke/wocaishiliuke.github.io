@@ -5,7 +5,7 @@ categories:
     - DesignPatterns
 tags:
     - DesignPatterns
-    - Java
+    
 ---
 
 本文摘自【芋道源码】的《深入解析单例模式的七种实现》，记录单例模式的实现方式。

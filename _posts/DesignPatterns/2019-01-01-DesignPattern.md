@@ -19,7 +19,7 @@ tags:
 
 # I.简介
 
-GOF"四人帮"设计模式，分为3大类23种，详见下述。当然江湖上还有其他设计模式，如简单工厂、J2EE模式（更关注表示层）等。
+GOF"四人帮"设计模式，分为3大类23种，详见下述。江湖上还有其他设计模式，如简单工厂、J2EE模式（更关注表示层）等。
 
 ## 1.原则
 
@@ -275,7 +275,7 @@ Composite Reuse Principle
 - Creational 创建型（5种）
     + Factory method（工厂方法模式）
     + Abstract factory（抽象工厂模式）
-    + Singleton（单例模式）
+    + [Singleton（单例模式）](http://blog.wocaishiliuke.cn/designpatterns/2019/01/02/Singleton/)
     + Builder（建造者模式）
     + Prototype（原型模式）
 - Structural 结构型（7种）
