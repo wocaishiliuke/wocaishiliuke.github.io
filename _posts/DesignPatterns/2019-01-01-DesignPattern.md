@@ -273,7 +273,7 @@ Composite Reuse Principle
 # II.汇总
 
 - Creational 创建型（5种）
-    + Factory method（工厂方法模式）
+    + [Factory method（工厂方法模式）](http://blog.wocaishiliuke.cn/designpatterns/2019/01/03/Factory/)
     + Abstract factory（抽象工厂模式）
     + [Singleton（单例模式）](http://blog.wocaishiliuke.cn/designpatterns/2019/01/02/Singleton/)
     + Builder（建造者模式）
