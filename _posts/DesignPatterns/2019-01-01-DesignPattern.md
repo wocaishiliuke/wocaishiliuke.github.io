@@ -266,7 +266,7 @@ Composite Reuse Principle
 - 聚合表示弱拥有，体现的是A对象可以包含B对象，但B对象不是A对象的一部分。如狼和狼群（集合或数组）。
 - 合成表示强拥有，体现了严格的部分和整体关系，部分和整体的生命周期一样。如狼和腿（引用型成员变量）
 
-> 如何判断：Is-A时用继承，Has-A时用合成或聚合。不要为了部分功能而继承，认错了亲爹。
+> 如何判断：Is-A时用继承，Has-A时用合成。不要为了部分功能而继承，认错了亲爹。
 
 ---
 
@@ -274,7 +274,7 @@ Composite Reuse Principle
 
 - Creational 创建型（5种）
     + [Factory method（工厂方法模式）](http://blog.wocaishiliuke.cn/designpatterns/2019/01/03/Factory/)
-    + Abstract factory（抽象工厂模式）
+    + [Abstract factory（抽象工厂模式）](http://blog.wocaishiliuke.cn/designpatterns/2019/01/03/Factory/)
     + [Singleton（单例模式）](http://blog.wocaishiliuke.cn/designpatterns/2019/01/02/Singleton/)
     + Builder（建造者模式）
     + Prototype（原型模式）

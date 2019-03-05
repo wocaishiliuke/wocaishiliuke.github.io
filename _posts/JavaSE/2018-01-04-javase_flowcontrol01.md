@@ -250,6 +250,9 @@ for (int i = 1; i < 10; i++) {
 }
 ```
 
+> Java5中引入了主要用于数组或者实现了Iterable接口的类的增强for循环，依次处理数组中的元素，而不需要指定数组索引。
+> Java8中结合Lambda表达式，引入一种新的for循环，用于实现了Iterable接口的类的遍历，forEach方法是集合父接口java.lang.Iterable中新增的一个default实现方法。
+
 ## 2.while循环
 
 组成：初始表达式，条件表达式，循环控制语句=循环后操作表达式，循环体
@@ -324,6 +327,8 @@ while (true) {
 
 命名使用合法标识符。一般用于多层循环中
 
+- break label
+
 ```java
 outer: for (int i = 1; i < 10; i++) {
     System.out.println(i);
@@ -341,6 +346,37 @@ http://www.baidu.com
 System.out.println(i);
 ```
 
+- continue label
+
+```java
+public void test(){
+    CONTINUE_LABEL:
+    for (int i = 0; i < 3; i++) {
+        System.out.println(String.format("start outer for loop index %d", i));
+        for (int k = 0; k < 3; k++) {
+            if (k == 1){
+                continue CONTINUE_LABEL;
+            }
+            System.out.println(String.format("inner loop index %d", k));
+        }
+        System.out.println(String.format("end outer for loop index %d", i));
+    }
+    System.out.println("loop end");
+}
+```
+
+输出结果：
+
+```
+start outer for loop index 0
+inner loop index 0
+start outer for loop index 1
+inner loop index 0
+start outer for loop index 2
+inner loop index 0
+loop end
+```
+
 ## 4.return
 
-用来结束方法
+结束方法
