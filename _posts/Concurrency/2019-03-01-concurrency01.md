@@ -16,6 +16,7 @@ tags:
 + II.线程概述
 + III.JMM
 + IV.synchronized
++ V.volatile
 
 ---
 
@@ -446,11 +447,17 @@ JMM设计者需要考虑两个因素：
 
 ## 3.并发编程需要注意的问题
 
-- 可见性
-- 有序性
-- 原子性
+并发的切入点分为2个核心，3大性质：
 
-可见性，即上述可能出的数据"脏读"现象，也就是数据可见性的问题。有序性，即需要注意重排序在多线程中也容易出现问题，比如经典的单例DCL，此时就需要禁止重排序。另外，原子性是指，在多线程下原子操作如i++不加以注意的也容易出现线程安全的问题（实际i++在Class文件中对应多条指令）。最后就是学习和使用好J.U.C包下的并发工具类和并发容器。
+- 2个核心：
+    - JMM内存模型（主内存和工作内存）
+    - happens-before原则
+- 3大性质：
+    - 原子性
+    - 可见性
+    - 有序性
+
+对于3大性质：可见性，即上述可能出的数据"脏读"现象，也就是数据可见性的问题。有序性，即需要注意重排序在多线程中也容易出现问题，比如经典的单例DCL，此时就需要禁止重排序。另外，原子性是指，在多线程下原子操作如i++不加以注意的也容易出现线程安全的问题（实际i++在Class文件中对应多条指令）。最后就是学习和使用好J.U.C包下的并发工具类和并发容器。
 
 
 ---
@@ -747,3 +754,206 @@ public class SynchronizedDemo implements Runnable {
 ```
 
 如果不使用同步，可能会出现A线程累加后，B线程做累加，但使用的是原来值（A写回主存前的值），即"脏值"，结果就会出错。使用了Syncnized就可以能保证内存可见性，保证每个线程操作的都是最新值。当然还有其他改造方式
+
+
+---
+
+# V.volatile
+
+## 1.概述
+
+volatile可以说是和synchronized各领风骚。synchronized是阻塞式同步，在线程竞争激烈时会升级为重量级锁。而volatile可以说是java虚拟机提供的最轻量级的同步机制。
+
+Java内存模型中，各个线程会将共享变量从主内存拷贝到工作内存，然后对工作内存中的数据进行操作。对于普通变量，何时写回主存是没有规定的，而针对volatile修饰的变量，java虚拟机有着特殊的约定：**线程对volatile变量的修改会立刻被其他线程所感知**，不会出现脏读，从而保证数据的"可见性"。
+
+被volatile修饰的变量能够保证每个线程能够获取该变量的最新值，从而避免数据脏读。
+
+> volatile只能保证可见性，不能保证原子性。如对volatile int a进行a++操作
+
+## 2.原理
+
+在生成汇编代码时，会在volatile修饰的共享变量进行写操作时，多出Lock前缀的指令（可以使用一些工具查看）。Lock前缀的指令在多核处理器下主要有两个方面的影响：
+
+- a.将当前处理器缓存行的数据写回系统内存
+- b.该写回内存的操作，会使得其他CPU里缓存了该内存地址的数据无效
+
+为了提高处理速度，处理器不直接和内存通信。而是先将系统内存的数据读到内部缓存（L1，L2或其他），再进行操作，但操作完成后不知道何时会写到内存。如果对volatile变量进行写操作，JVM就会向处理器发送一条Lock前缀指令，将这个变量所在缓存行的数据写回系统内存。但此时其他处理器缓存的值还是旧的，再执行计算操作仍会有问题。所以，在多处理器下，为了保证各处理器的缓存一致，会实现**缓存一致性协议**。每个处理器通过嗅探在总线上传播的数据，来检查自己缓存的值是否过期。一旦处理器发现自己缓存行对应的内存地址被修改，会将缓存行设置成无效状态。当处理器对该数据进行操作时，会重新从系统内存中把该数据读到自己的缓存。即volatile：
+
+- a.Lock前缀的指令会引起处理器缓存写回内存
+- b.一个处理器的缓存回写到内存，会导致其他处理器的缓存失效
+- c.当某个处理器发现本地缓存失效后，就会从内存中重读该变量，获取最新值
+
+对于volatile变量，通过缓存一致性协议这样的机制，使得每个线程都能获得该变量的最新值，满足数据的"可见性"。
+
+## 3.volatile的happens-before关系
+
+在happens-before的具体规则中，有一条关于volatile变量的：**对一个volatile域的写，happens-before于任意后续对这个volatile域的读。**
+
+```java
+public class VolatileDemo {
+    private int a = 0;
+    private volatile boolean flag = false;
+    public void writer(){
+        a = 1;          //1
+        flag = true;    //2
+    }
+    public void reader(){
+        if(flag){       //3
+            int i = a;  //4
+        }
+    }
+}
+```
+
+假设加锁线程A先执行writer方法，然后线程B执行reader方法：
+
+- 1.线程A修改共享变量a
+- 2.线程A修改共享volatile变量flag
+- 3.线程B读取共享volatile变量flag
+- 4.线程B读取共享变量a
+
+其中，根据happens-before规则对volatile变量的要求可知，线程A修改flag（步骤2）happens-before线程B读取flag（步骤3），线程A修改后的flag值对线程B可见。即当线程A将volatile变量 flag更改为true后线程B就能够迅速感知。
+
+## 4.volatile的内存语义
+
+即volatile对应的内存操作
+
+假设线程A先执行writer()，线程B随后执行reader()。初始时线程的本地内存中flag和a都是初始状态，下图是线程A执行写后的状态：
+
+![avatar](http://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/Concurrency/volatile01)
+
+当volatile变量写回主存后，线程B中的本地内存中的flag就会置为失效状态，线程B需要重新从主内存中读取该变量值。下图是线程B读取后的状态：
+
+![avatar](http://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/Concurrency/volatile02)
+
+横向看，就像线程A和线程B之间进行了一次通信。线程A在写volatile变量时，实际上就像是给B发送了一个消息，告诉线程B你现在的值过期了。线程B读取使用自己工作内存中的该变量时，就像是接收了线程A刚刚发送的消息，然后重新去主内存读取。
+
+#### volatile的内存语义实现
+
+为了性能优化，JMM在不改变正确语义的前提下，允许编译器和处理器对指令序列重排序。如果想阻止重排序，可以添加内存屏障。
+
+- 内存屏障
+
+JMM内存屏障分为4类：
+
+|屏障类型|指令示例|说明|
+|:------|:-----|:---|
+|LoadLoad Barriers|Load1;LoadLoad;Load2|确保Load1数据的装载先于Load2及所有后续装载指令的装载|
+|StoreStore Barriers|Store1;StoreStore;Store2|确保Store1数据对其他处理器可见（刷新到内存）先于Store2及所有后续存储指令的存储|
+|LoadStore Barriers|Load1;LoadStore;Store2|确保Load1数据装载先于Store2及所有后续存储指令刷新到内存|
+|StoreLoad Barriers|Store1;StoreLoad;Load2|确保Store1数据对其他处理器可见（刷新到内存）先于Load2及所有后续装载指令的装载。StoreLoad Barriers会使该屏障之前的所有内存访问指令（存储和装载指令）完成之后，才执行该屏障之后的内存访问指令|
+
+为了实现volatile的内存语义，编译器在生成字节码时，会在指令序列中的适当位置，插入内存屏障来禁止特定类型的处理器重排序。JMM针对编译器制定的volatile重排序规则表：
+
+|能否重排序|第二个操作|
+|:--|:-----|:---|:----|
+|第一个操作|普通读/写|volatile读|volatile写|
+|普通读/写| | |NO|
+|volatile读|NO|NO|NO|
+|volatile写| |NO|NO|
+
+上表中，"NO"表示禁止重排序。对于编译器来说，采用一个最优布置来最小化插入屏障的总数，几乎是不可能的，为此，JMM采取了保守策略：
+
+- 1.在每个volatile写操作的前面插入1个StoreStore屏障，后面插入1个StoreLoad屏障
+- 2.在每个volatile读操作的后面插入1个LoadLoad屏障和1个LoadStore屏障
+
+> volatile写是在前后分别插入内存屏障，而volatile读是在后面插入两个内存屏障
+
+- StoreStore屏障：禁止上面的普通写和下面的volatile写重排序；
+- StoreLoad屏障：防止上面的volatile写与下面可能有的volatile读/写重排序
+- LoadLoad屏障：禁止下面所有的普通读操作和上面的volatile读重排序
+- LoadStore屏障：禁止下面所有的普通写操作和上面的volatile读重排序
+
+![avatar](http://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/Concurrency/volatile-barrier-01)
+
+![avatar](http://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/Concurrency/volatile-barrier-02)
+
+## 5.示例
+
+#### 示例1：volatile的用处
+
+```java
+public class VolatileDemo {
+    private static volatile boolean isOver = false;
+
+    public static void main(String[] args) {
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (!isOver) ;
+            }
+        });
+        thread.start();
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        isOver = true;
+    }
+}
+```
+
+上述将isOver设置成volatile变量，这样在main线程中将isOver改为了true后，thread线程的工作内存该变量值就会失效，需要重新从主内存中读取该值。读取isOver最新值后，结束掉thread线程中的死循环，从而才能够完成和停掉thread线程。
+
+另外，单例DCL中创建实例的线程安全问题，也可以使用volatile解决。即不让instance = new Singleton()对应的多条指令重排序（按照1.分配内存空间-2.初始化对象-3.引用赋内存地址值的顺序，而非1-3-2），保证了多线程下的单例。
+
+#### 示例2：volatile的无用之处
+
+```java
+public class VolatileDemo {
+    public static volatile int a = 0;
+    public static final int THREAD_COUNT = 20;
+    
+    public static void main(String[] args) {
+        Thread[] threads = new Thread[THREAD_COUNT];
+        for (int i = 0; i < THREAD_COUNT; i++) {
+            threads[i] = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    for (int i = 0; i < 1000; i++) {
+                        increase();
+                    }
+                }
+            });
+            threads[i].start();
+        }
+        //等待所有累加线程结束
+        while(Thread.activeCount() > 1)
+            Thread.yield();
+        System.out.println(a);  
+    }
+
+    public static void increase() {
+        a++;
+    }
+}
+```
+
+每次执行的结果可能都不一样，即使使用了volatile，也没能避免并发安全问题。因为volatile只能保证可见性，无法保证原子性。**自增操作并不是一个原子操作**（字节码如下所示，对应0、3、4、5指令），在并发的情况下，putstatic指令可能把较小的a值同步回主内存之中，导致结果出错。
+
+```
+public static void increase();
+    descriptor: ()V
+    flags: ACC_PUBLIC, ACC_STATIC
+    Code:
+      stack=2, locals=0, args_size=0
+         0: getstatic     #11                 // Field a:I
+         3: iconst_1
+         4: iadd
+         5: putstatic     #11                 // Field a:I
+         8: return
+         ...
+```
+
+当然可以对整个increase()同步，即加上synchronized修饰，那么其他线程将会阻塞，性能稍差。此时可以使用CAS解决：使用Java并发包中的原子操作类（Atomic开头）
+
+```java
+public static AtomicInteger a = new AtomicInteger(0);
+public static void increase() {
+    // a++;             //非原子操作：取值-加1-写值
+    a.getAndIncrement();//原子操作
+}
+```
+
+> getAndIncrement()是采用CAS操作实现的自增（其中使用了基于硬件cmpxchg指令的Atomic::cmpxchg()方法）
