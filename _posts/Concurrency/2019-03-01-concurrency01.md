@@ -1,4 +1,25 @@
-# 一、并发概述
+---
+title: 并发基础
+date: 2019-03-01 00:00:00
+categories:
+    - Concurrency
+tags:
+    - Concurrency
+---
+
+参考[CL0610/Java-concurrency](https://github.com/CL0610/Java-concurrency)，整理一些并发的基础知识。
+
+<!-- more -->
+
+##### 目录
++ I.并发概述
++ II.线程概述
++ III.JMM
++ IV.synchronized
+
+---
+
+# I.并发概述
 
 ## 1.并发优点
 - 充分发挥多核CPU的计算能力（硬件设计者将摩尔定律的责任推给了软件开发者）
@@ -44,7 +65,7 @@
 
 ---
 
-# 二、线程概述
+# II.线程概述
 
 Java程序本身就是一个多线程程序，包括了：
 
@@ -304,7 +325,7 @@ public class DaemonDemo {
 
 ---
 
-# 三、JMM
+# III.JMM
 
 Java Memory Model，Java内存模型。
 
@@ -434,7 +455,7 @@ JMM设计者需要考虑两个因素：
 
 ---
 
-# 四、synchronized
+# IV.synchronized
 
 ```java
 public class SynchronizedDemo implements Runnable {
@@ -559,7 +580,7 @@ public class MonitorDemo {
 
 **1.线程A释放锁happens-before线程B加锁。２．线程A的执行结果对线程B可见（即线程B所读取到主存中的a＝1）**
 
-## ４．锁获取和锁释放的内存语义
+## ４.锁获取和锁释放的内存语义
 
 即【线程A加锁-操作临界区变量-释放锁】过程中的内存操作（以上述代码为例）：线程A会先从主内存中读取共享变量a=0，然后将该变量拷贝到自己的本地内存，进行加１操作后，再将该值刷回到主内存
 
