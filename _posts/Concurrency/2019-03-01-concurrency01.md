@@ -968,3 +968,126 @@ public static void increase() {
 参考[Java面向对象（3）](http://blog.wocaishiliuke.cn/javase/2018/01/08/javase_oo03/)
 
 ## 2.多线程中的final
+
+JMM对于编译器和处理器是一种弱内存数据模型。允许它们对指令的重排序。多线程中的final讨论的就是**final变量的重排序**问题
+
+#### 2.1 基本数据类型
+
+即final修饰的基本数据类型的重排序问题
+
+```java
+public class FinalDemo {
+    private int a;  //普通域
+    private final int b; //final域
+    private static FinalDemo finalDemo;
+
+    public FinalDemo() {
+        a = 1; // 1.写普通域
+        b = 2; // 2.写final域（final域的显示初始化）
+    }
+
+    public static void writer() {
+        finalDemo = new FinalDemo();
+    }
+
+    public static void reader() {
+        FinalDemo demo = finalDemo; // 3.读对象引用
+        int a = demo.a;             // 4.读普通域
+        int b = demo.b;             // 5.读final域
+    }
+}
+```
+
+假设线程A在执行writer()，线程B在执行reader()。（如果线程B先执行了reader()，会报空指针）
+
+##### 写final域的重排序规则
+
+**JMM禁止编译器把final域的写，重排序到构造函数之外**。
+
+该规则的实现方式：编译器会在final域写之后，构造函数return之前，插入一个storestore屏障。该屏障可以禁止处理器把final域的写，重排序到构造函数之外。
+
+构造方法中，a和b之间没有数据依赖性。就存在一种执行可能：普通变量a有可能被重排序到构造函数之外，线程B也就有可能读到a的默认初始化值0，出现错误。而final域b，根据重排序规则，其写操作不会重排序到构造函数之外，线程B就能够读到final变量显示初始化后的值。描述如下：
+
+> 线程A执行writer()，new操作大致分3步：创建对象、构造初始化、赋地址值给引用
+
+- 1.线程A开始执行构造方法
+- 2.final变量b=2写操作
+- 3.storestore屏障
+- 4.构造执行完成return
+- 5.赋地址值给引用finalDemo
+- 6.普通变量a=1写操作
+
+- i.线程B开始执行reader()
+- ii.读引用finalDemo
+- iii.读普通变量a
+- iiii.读final变量b
+
+>上述两个线程执行的过程中，如果线程A执行到步骤5之后，线程B执行iii去读取普通变量a，就只能读到0。
+
+因此，**写final域的重排序规则可以确保：在对象引用finalDemo为任意线程可见之前，对象的final域能够被正确初始化。而普通域就不具有这个保障。**
+
+##### 读final域的重排序规则
+
+**在一个线程中，初次读对象引用和初次读该对象包含的final域，JMM会禁止这两个操作的重排序。**
+
+注意，该规则仅针对处理器，处理器会在读final域操作的前面，插入一个LoadLoad屏障。
+
+> 实际上，读对象的引用和读该对象的final域存在间接依赖性，一般处理器不会重排序这两个操作。但是有一些处理器会重排序。因此，该规则就是针对这些处理器而设定的。
+
+read()方法主要包含了三个操作：初次读引用finalDemo、初次读引用对象的普通域a、初次读引用对象的final域b。假设线程A写过程没有重排序，针对某些处理器，存在一种执行可能：
+
+- 1.线程A开始执行构造方法
+- 2..普通变量a=1写操作
+- 3.final变量b=2写操作
+- 4.storestore屏障
+- 5.构造执行完成return
+- 6.赋地址值给引用finalDemo
+
+
+- i.线程B开始执行reader()
+- ii.读普通变量a
+- iii.读引用finalDemo
+- iiii.LoadLoad屏障
+- iiiii.读final变量b
+
+上述可能中，读取对象的普通变量，被重排序到了读对象引用的前面，显然是错误的操作。而final域的读规则避免了这种情况：**在读一个对象的final域之前，一定会先读包含这个final域的对象的引用**。
+
+#### 2.2 引用数据类型
+
+即final修饰的引用数据类型的重排序问题
+
+```java
+public class FinalReferenceDemo {
+    final int[] array;
+    private FinalReferenceDemo finalReferenceDemo;
+
+    public FinalReferenceDemo() {
+        array = new int[1];  //1
+        array[0] = 1;        //2
+    }
+
+    public void writerOne() {
+        finalReferenceDemo = new FinalReferenceDemo(); //3
+    }
+
+    public void writerTwo() {
+        array[0] = 2;  //4
+    }
+
+    public void reader() {
+        if (finalReferenceDemo != null) {  //5
+            int temp = finalReferenceDemo.array[0];  //6
+        }
+    }
+}
+```
+
+##### 写final域的重排序规则
+
+JMM可以确保线程C至少能看到写线程A对final引用的对象的成员域的写入，即能看下arrays[0] = 1，而写线程B对数组元素的写入可能看到可能看不到。JMM不保证线程B的写入对线程C可见，线程B和线程C之间存在数据竞争，此时的结果是不可预知的。如果可见的，可使用锁或者volatile。
+
+
+
+##### 对final修饰的对象的成员域写操作
+
+针对引用数据类型，final域写针对编译器和处理器重排序增加了这样的约束：在构造函数内对一个final修饰的对象的成员域的写入，与随后在构造函数之外把这个被构造的对象的引用赋给一个引用变量，这两个操作是不能被重排序的。注意这里的是“增加”也就说前面对final基本数据类型的重排序规则在这里还是使用。这句话是比较拗口的，下面结合实例来看。
