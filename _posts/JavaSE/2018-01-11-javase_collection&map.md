@@ -21,11 +21,11 @@ tags:
 
 # I.概述
 
-Java中的常用容器，基本可以分为两类：表示集合的Collection、表示K-V的Map。其中所有集合都实现了Collection接口，所有的Map都实现了Map接口。
+Java中的[集合](https://docs.oracle.com/javase/8/docs/technotes/guides/collections/overview.html)，基本可以分为两类：单列集合Collection、k-v双列集合Map。
 
 ![avatar](http://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/JavaSE/collection/java-collections-framework.png)
 
-上面Collection和Map体系的设计，采用了经典的接口(interfaces)与实现(implementations)分离的思想，具体实现类都会实现一个或多个接口。另外，在接口和具体实现类之间，大多还使用了抽象类，在抽象类中做了一些通用的实现，是为了更方便的实现接口。以队列（queue）为例： 
+Collection和Map体系的设计，采用了经典的接口(interfaces)与实现(implementations)分离的思想，具体实现类都会实现一个或多个接口。另外，在接口和具体实现类之间，大多还使用了抽象类，在抽象类中做了一些通用的实现，是为了更方便的实现接口。以队列（queue）为例： 
 
 > **队列是种FIFO的数据结构，入队在队尾，出队在队头**。Queue接口中只定义了队列的通用方法，没有说明队列的具体实现方式。这里以add()和remove()为例
 
@@ -71,7 +71,7 @@ public class LinkedList<E> extends AbstractSequentialList<E> implements List<E>,
 
 数组长度是固定的，不够灵活。Java提供了可以存储任意对象、长度可变的集合（可变容器）。
 
-![avatar](http://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/JavaSE/collection/Collection.png)
+<div align=center>![avatar](http://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/JavaSE/collection/Collection.png)
 
 > **和数组的区别**
 
