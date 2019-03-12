@@ -71,8 +71,6 @@ public class LinkedList<E> extends AbstractSequentialList<E> implements List<E>,
 
 数组长度是固定的，不够灵活。Java提供了可以存储任意对象、长度可变的集合（可变容器）。
 
-<div align=center>![avatar](http://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/JavaSE/collection/Collection.png)
-
 > **和数组的区别**
 
 - 1.数组固定长度；集合长度可变
@@ -80,11 +78,11 @@ public class LinkedList<E> extends AbstractSequentialList<E> implements List<E>,
 
 当元素个数固定，可使用数组，节省内存；否则使用集合，更灵活。
 
-> 集合中部分子类是基于数组实现的，如ArrayList，初始长度10，超出时扩容1.5倍
+> 集合中部分子类是基于数组实现的，如ArrayList，初始长度（第一次add时）10，超出时扩容1.5倍
 
 ## 1.概述
 
-所有的具体集合类都直接或间接实现了Collection接口，Collection接口定义了集合的一些通用方法。包括了集合操作元素、集合操作集合等方法。
+所有集合类都直接或间接实现了Collection接口，接口中定义了集合的一些通用方法。包括了集合操作元素、集合操作集合等方法。
 
 ```java
 public interface Collection<E> extends Iterable<E> {
@@ -157,7 +155,7 @@ public interface Collection<E> extends Iterable<E> {
 
 ## 2.AbstractCollection
 
-Java集合框架中，一个接口往往会对应一个抽象类，实现一些接口中的通用方法。Collection接口也有AbstractCollection抽象类，提供一些基于迭代器Iterator的contains、remove、removeAll等方法的实现，这样就能让实现者更容易的实现Collection接口。
+Java集合框架中，一个接口往往会对应一个抽象类，实现接口中的一些通用方法。Collection接口也有AbstractCollection抽象类，提供基于迭代器Iterator的contains、remove等一些方法的实现，方便实现类更轻松地实现Collection接口。
 
 ```java
 public abstract class AbstractCollection<E> implements Collection<E> {
@@ -183,7 +181,9 @@ public abstract class AbstractCollection<E> implements Collection<E> {
 
 ## 3.Iterable和Iterator
 
-可以通过Iterator对象，对实现了Iterable接口（since 1.5）的类进行迭代。
+通过java.util.Iterator对象，可以对实现了java.lang.Iterable接口（since 1.5）的类进行迭代。
+
+> Collection接口继承了Iterable接口，而Map接口没有。
 
 ```java
 public interface Iterable<T> {
@@ -223,23 +223,23 @@ public interface Iterator<E> {
 }
 ```
 
-迭代器用于集合的遍历。但具体实现类的数据结构不同，Iterator就将hasNext和next抽象到接口层，由实现类自定义这两个方法的具体实现，如ArrayList的内部类Itr。这样使用Iterator进行遍历时，风格都是统一的。
+迭代器用于集合的遍历，但实现类的数据结构不同。Iterator就将hasNext和next等方法抽象到接口层，由实现类自定义这两个方法的具体实现，如ArrayList的内部类Itr。这样使用Iterator进行遍历时，风格统一。
 
 #### 3.1 迭代器遍历
 
-通过反复调用next方法，可以逐个访问集合中的每一个元素。但是到达集合的末尾，next方法将抛出一个noSuchElementException异常。因此在调用next之前要调用hasNext方法，判断是否存在下一个元素。如果要遍历一个集合中的所有元素，就可以请求一个迭代器，并在hasNext返回true时反复地调用next方法，如下：
+反复调用next()，可以逐个访问元素。到达集合末尾时，next()将抛出noSuchElementException异常。因此在调用next()前,需要调用hasNext()，判断是否存在下一个元素。迭代器遍历的结构大致如下：
 
 ```java
 Collection<String> c = …;
 Iterator<String> iterator = c.iterator();
 while(c.hasNext()) {
     // 该方法会将指针向前移动一位
-    String element = iterator.next();//如果没用泛型，这里就需要强转(String)it.next()，因为存入的时候是多态Object o = "a";
+    String element = iterator.next();//如果没用泛型，就需要强转(String)it.next()，因为存入时是多态Object o = "a";
     //处理element
 }
 ```
 
-Java 5之后，这种循环可以采用一种更优雅的方式进行遍历：for each循环。编译器会将"for each"循环翻译为带有迭代器的循环：
+Java 5提供了一个更优雅的增强for循环语法糖：foreach。编译器会将foreach循环翻译为迭代器循环：
 
 ```java
 for (String element : c) {
@@ -249,7 +249,7 @@ for (String element : c) {
 
 #### 3.2 迭代器删除
 
-Iterator接口的remove方法用于删除上次调用next方法时返回的元素。通过如下方式，可以删除集合中第一个元素：
+Iterator接口的remove()用于删除上次调用next()时返回的元素，该方法在单线程下可避免并发修改异常。如：
 
 ```java
 Iterator<String> iterator = c.iterator();
@@ -257,7 +257,7 @@ iterator.next();
 iterator.remove();
 ```
 
-注意，remove方法的调用对next方法具有依赖性。调用remove()之前没有调用next()是不合法的，会抛IllegalStateException。比如删除两个连续的元素，不能直接这样调用：
+注意，remove()的调用对next()具有依赖性。调用remove()之前没有调用next()是不合法的，会抛IllegalStateException。比如删除两个连续的元素，不能直接这样调用：
 
 ```java
 iterator.remove();
@@ -273,7 +273,7 @@ List<String> list = Lists.newArrayList("this", "is", "list");
 list.iterator().forEachRemaining(ele -> System.out.println("consume :" + ele));
 ```
 
-## 4.集合通用遍历
+## 4.Collection通用遍历
 
 ```java
 Collection<String> c = new ArrayList<>();
@@ -291,7 +291,7 @@ for (int i = 0; i < arr.length; i++) {
 }
 ```
 
-> 循环内如果需要调用子类String特有的方法（多态的弊端），需要向下强转String s = (String)arr[i];
+> 循环内如果需要调用子类String特有的方法（多态的弊端），需要向下强转(String)arr[i];
 
 - 2.迭代器遍历
 
@@ -317,7 +317,7 @@ while(it.hasNext()) {
 
 每种Map保证键唯一的方式不同，根据它们实现的算法分为HashMap、TreeMap等
 
-> Map键唯一，Set元素唯一。Map和Collection中的Set体系相似。Set底层依赖Map（元素存到k，v=new Object()）。
+> Map键唯一，Set元素唯一。Map和Collection中的单列集合Set相似。Set底层依赖Map（元素存到k，v=new Object()）。
 
 ```java
 public interface Map<K,V> {
@@ -560,7 +560,7 @@ public interface Map<K,V> {
 
 ## 2.AbstractMap
 
-Map接口也有AbstractMap抽象类，提供一些基于迭代器Iterator的containsKey、containsValue、remove等方法的实现，也是为了更容易的实现Map接口。
+Map接口也有AbstractMap抽象类，提供一些基于Set entrySet的Iterator迭代器的containsKey、containsValue、remove等方法的实现，也是为了更容易的实现Map接口。
 
 ```java
 public abstract class AbstractMap<K,V> implements Map<K,V> {

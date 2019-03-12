@@ -20,9 +20,11 @@ tags:
 
 # I.List
 
+List是Collection的子接口。
+
 ![avatar](http://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/JavaSE/collection/List.png)
 
-List是Collection的子接口。由于List是有序的，即有索引（Set没有），所以除了Collection中的通用方法外，List中还有基于索引的特有方法
+List是有序的，即有索引（Set没有）。所以除了Collection中的通用方法外，List中还有一些基于索引的特有方法。
 
 ```java
 public interface List<E> extends Collection<E> {
@@ -82,9 +84,9 @@ public interface List<E> extends Collection<E> {
 }
 ```
 
-## 1.遍历
+## 1.索引遍历
 
-除了Collection中通用的2种遍历方式外，因为List有索引，所以它还有特有的遍历方式：
+除了Collection中通用的2种遍历方式外，因为List有索引，所以它还有自己的遍历方式：
 
 ```java
 List<String> list = new ArrayList<>();
@@ -129,48 +131,51 @@ Exception in thread "main" java.util.ConcurrentModificationException
 根据报错查看ArrayList$Itr源码
 
 ```java
-public abstract class AbstractList<E> extends AbstractCollection<E> implements List<E> {
+public class ArrayList<E> extends AbstractList<E> implements List<E>, RandomAccess, Cloneable, java.io.Serializable {
+    
+    //继承自AbstractList
     //对List的修改次数。ArrayList中的add()和remove()，都会modCount++
     protected transient int modCount = 0;
     
+    //继承自AbstractList
     public Iterator<E> iterator() {
         return new Itr();
     }
 
+    //An optimized version of AbstractList.Itr
     private class Itr implements Iterator<E> {
-        int cursor = 0;                 //下一个要访问的元素索引
-        int lastRet = -1;               //上一个访问的元素索引
-        int expectedModCount = modCount;//期望对List的修改次数，初始值为modCount
+        int cursor;                     // 下一个要访问的元素索引，类变量，有初始值0
+        int lastRet = -1;               // 上一个访问的元素索引
+        int expectedModCount = modCount;// 期望对List的修改次数，初始值为modCount
 
-        public boolean hasNext() {
-            return cursor != size();
-        }
+        Itr() {}
 
+        public boolean hasNext() { return cursor != size; }
+
+        @SuppressWarnings("unchecked")
         public E next() {
             checkForComodification();
-            try {
-                int i = cursor;
-                E next = get(i);
-                lastRet = i;
-                cursor = i + 1;
-                return next;
-            } catch (IndexOutOfBoundsException e) {
-                checkForComodification();
+            int i = cursor;
+            if (i >= size)
                 throw new NoSuchElementException();
-            }
+            Object[] elementData = ArrayList.this.elementData;
+            if (i >= elementData.length)
+                throw new ConcurrentModificationException();
+            cursor = i + 1;
+            return (E) elementData[lastRet = i];
         }
 
         public void remove() {
             if (lastRet < 0)
                 throw new IllegalStateException();
             checkForComodification();
+
             try {
-                AbstractList.this.remove(lastRet);
-                if (lastRet < cursor)
-                    cursor--;
+                ArrayList.this.remove(lastRet);
+                cursor = lastRet;
                 lastRet = -1;
                 expectedModCount = modCount;
-            } catch (IndexOutOfBoundsException e) {
+            } catch (IndexOutOfBoundsException ex) {
                 throw new ConcurrentModificationException();
             }
         }
@@ -179,14 +184,9 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
             if (modCount != expectedModCount)
                 throw new ConcurrentModificationException();
         }
+        ...
     }
-}
-```
 
-```java
-public class ArrayList<E> extends AbstractList<E>
-        implements List<E>, RandomAccess, Cloneable, java.io.Serializable
-{
     public boolean remove(Object o) {
         if (o == null) {
             for (int index = 0; index < size; index++)
@@ -212,19 +212,22 @@ public class ArrayList<E> extends AbstractList<E>
                              numMoved);
         elementData[--size] = null; // clear to let GC do its work
     }
+    ...
 }
 ```
 
 - 循环开始时，cursor=0, lastRet=-1, expectedModCount=modCount=0
-- 查看AbstractList可以看出，执行list.iterator()返回的是new Itr()
-- 执行it.hasNext()，查看Itr源码，即判断下一个元素的下标是否等于list的大小，是则达末尾了
+- list.iterator()，执行从AbstractList继承的方法，返回new Itr()
+- 执行it.hasNext()，即cursor和size是否相等，是否到达末尾了
 - 执行String s = it.next()后，cursor=1, lastRet=0, expectedModCount=modCount=0
 - if条件成立，实际执行子类ArrayList的remove，调用fastRemove()：modCount加1，arraycopy后，集合size-1，最后一个元素引用置为null，方便GC回收。此时cursor=1, lastRet=0, expectedModCount=0, modCount=1
-- 该次循环结束，执行下次while循环，再it.next()时，会checkForComodification()，由于expectedModCount!=modCount抛出异常
+- 该次循环结束，执行下次循环，执行到it.next()时会checkForComodification()，由于expectedModCount!=modCount抛出异常
 
-#### 2.2解决
+#### 2.2 解决
 
-- 1.Itr中提供了remove()，在该方法中：expectedModCount = modCount。所以可以使用迭代器的remove，而非list的remove
+- 1.使用迭代器Itr提供的remove()，而非list的remove
+
+> 在Itr.remove()中，有expectedModCount = modCount操作，所以不会出现并发修改异常。
 
 ```java
 Iterator<String> it = list.iterator();
@@ -367,7 +370,7 @@ System.out.println(list);
 
 执行了list.remove()后，虽然modCount自增了，但同时集合的size也减少了1。下次进行hasNext判断时，cusor=3=size，hasNext()返回false，不会进入循环体执行next()，也就不会执行checkForComodification()，即不会抛异常。
 
-在Java 8之后，可以调用Collection接口的新方法removeIf实现相同的效果：
+Java 8之后，还可以调用Collection接口的新方法removeIf()实现相同的效果：
 
 ```java
 list.removeIf(string -> string.equals("b"));
@@ -535,6 +538,8 @@ private void rangeCheckForAdd(int index) {
 
 
 ## LinkedList
+
+
 
 ## Vector
 
