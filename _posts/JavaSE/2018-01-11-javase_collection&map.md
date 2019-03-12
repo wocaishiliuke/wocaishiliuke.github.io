@@ -71,7 +71,7 @@ public class LinkedList<E> extends AbstractSequentialList<E> implements List<E>,
 
 数组长度是固定的，不够灵活。Java提供了可以存储任意对象、长度可变的集合（可变容器）。
 
-![avatar](TODO)
+![avatar](http://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/JavaSE/collection/Collection.png)
 
 > **和数组的区别**
 
@@ -181,9 +181,27 @@ public abstract class AbstractCollection<E> implements Collection<E> {
 }
 ```
 
-## 3.Iterator
+## 3.Iterable和Iterator
 
-迭代器用于集合的遍历。但具体实现类的数据结构不同，Iterator就将hasNext和next抽象到接口层，由实现类自定义这两个方法的具体实现。这样使用Iterator进行遍历时，风格都是统一的。
+可以通过Iterator对象，对实现了Iterable接口（since 1.5）的类进行迭代。
+
+```java
+public interface Iterable<T> {
+   
+    Iterator<T> iterator();
+
+    default void forEach(Consumer<? super T> action) {
+        Objects.requireNonNull(action);
+        for (T t : this) {
+            action.accept(t);
+        }
+    }
+
+    default Spliterator<T> spliterator() {
+        return Spliterators.spliteratorUnknownSize(iterator(), 0);
+    }
+}
+```
 
 ```java
 public interface Iterator<E> {
@@ -204,6 +222,8 @@ public interface Iterator<E> {
     }
 }
 ```
+
+迭代器用于集合的遍历。但具体实现类的数据结构不同，Iterator就将hasNext和next抽象到接口层，由实现类自定义这两个方法的具体实现，如ArrayList的内部类Itr。这样使用Iterator进行遍历时，风格都是统一的。
 
 #### 3.1 迭代器遍历
 
@@ -290,9 +310,7 @@ while(it.hasNext()) {
 
 ## 1.概述
 
-![avatar](TODO)
-
-双列集合的根接口
+双列集合的根接口。是个顶级接口（不像Collection还继承了Iterable）
 
 - 1.将键映射到值
 - 2.键唯一，不可重复（每个键只能映射一个值）
