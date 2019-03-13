@@ -973,6 +973,29 @@ default Spliterator<E> spliterator() {
 }
 ```
 
+## 8.模拟栈
+
+使用LinkedList大致模拟栈的基本操作
+
+```java
+public class SelfStack<T> {
+    
+    private LinkedList<T> list;
+    
+    public SelfStack() { list = new LinkedList<T>(); }
+    
+    /* 进栈 */
+    public void in(T t) { list.addLast(t); }
+    
+    /* 出栈 */
+    public T out() { return list.removeLast(); }
+    
+    /* 是否空栈 */
+    public boolean isEmpty() { return list.isEmpty(); }
+    ...
+}
+```
+
 
 ---
 
