@@ -13,7 +13,9 @@ tags:
 
 ##### 目录
 - [X] I.List
-- [x] II.实现类
+- [x] II.ArrayList
+- [X] III.LinkedList
+- [X] IV.Vector
 
 
 ---
@@ -50,14 +52,18 @@ public interface List<E> extends Collection<E> {
     void add(int index, E element);
     E remove(int index);
 
+    //返回o在list中第一次出现的index，如果不存在返-1
     int indexOf(Object o);
+    //返回o在list中最后一次出现的index，如果不存在返-1
     int lastIndexOf(Object o);
     ListIterator<E> listIterator();
     ListIterator<E> listIterator(int index);
+    //截取，左闭右开
     List<E> subList(int fromIndex, int toIndex);
 
     //since 1.8
 
+    //根据UnaryOperator规则，将list中每一个元素映射为另一个元素
     default void replaceAll(UnaryOperator<E> operator) {
         Objects.requireNonNull(operator);
         final ListIterator<E> li = this.listIterator();
@@ -66,6 +72,7 @@ public interface List<E> extends Collection<E> {
         }
     }
 
+    //根据Comparator排序规则，进行排序
     @SuppressWarnings({"unchecked", "rawtypes"})
     default void sort(Comparator<? super E> c) {
         Object[] a = this.toArray();
@@ -77,6 +84,7 @@ public interface List<E> extends Collection<E> {
         }
     }
 
+    //返回集合的Spliterator迭代器
     @Override
     default Spliterator<E> spliterator() {
         return Spliterators.spliterator(this, Spliterator.ORDERED);
@@ -387,38 +395,36 @@ while (lit.hasPrevious()){
 }
 ```
 
+## 4.实现类
 
----
-
-# II.实现类
-
-这里介绍ArrayList、LinkedList、Vector。
-
-## 对比
+ArrayList、Vector、LinkedList
 
 |对比|ArrayList|Vector|LinkedList|
 |:---|:----|:-----|:---------|
 |数据结构|数组|数组|链表|
-|效率|查询（修改）快O(1)，增删慢O(N)|查询（修改）快，增删慢|查询（修改）慢，增删快|
+|效率|按索引查询快O(1)，增删慢O(N)|按索引查询快O(1)，增删慢O(N)|不支持随机访问；按索引查询慢（从头/尾找，O(N/2)）；两端增删快O(1)，中间增删需要先定位O(N)，但不需要移位，即修改本身快O(1)|
 |线程|线程不安全，效率高|线程安全，效率低|线程不安全，效率高|
 
 > 这里ArrayList和Vector的查询指的是，使用索引访问。两者查找元素效率比较低，未排序时，时间复杂度为O(N)，已排序时，可以通过二分查找，时间复杂度为O(logN)
 
-当容器需要大量的插入删除操作时，避免使用ArrayList，可选用LinkedList。
+当容器需要大量插入删除操作时，避免使用ArrayList，可选用LinkedList。
 
-> 由于存在把线程不安全转变成线程安全的工具类，即使Vector是线程安全的，也会被ArrayList替代
+> 由于存在把线程不安全转变成线程安全的工具类，即使Vector是线程安全的，也没能避免被ArrayList替代
 
-## ArrayList
 
-ArrayList是基于数组实现的动态容器，容量不足时，会进行扩容。
+---
+
+# II.ArrayList
+
+ArrayList是List基于数组的实现。是物理存储连续动态容器。容量不足时，会进行扩容。
 
 ![avatar](http://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/JavaSE/collection/ArrayList.png)
 
-- 实现了RandomAccess接口，即支持快速随机访问（通过数组下标），时间复杂度为O(1)
+- 实现了RandomAccess接口，支持随机访问（因为物理存储连续），时间复杂度为O(1)
 - 支持序列化
 - 可以被克隆
 
-#### 源码
+## 1.成员变量
 
 ArrayList有两个重要成员：存放元素的Object[] elementData、集合长度size。类中的所有方法都是基于这两个成员实现的。
 
@@ -436,7 +442,7 @@ transient Object[] elementData; // non-private to simplify nested class access
 private int size;
 ```
 
-#### 构造
+## 2.构造
 
 ```java
 public ArrayList(int initialCapacity) {
@@ -454,7 +460,9 @@ public ArrayList(Collection<? extends E> c) {
 
 通过默认空参构造创建的ArrayList，被赋值ULTCAPACITY_EMPTY_ELEMENTDATA空数组。**即如果不进行后续操作，其实长度是0而非10（这算是种优化）。但如果添加元素，会在add()中设置默认容量10。**
 
-#### add(E e)
+## 3.常用方法
+
+#### 3.1 add(E e)
 
 这里以空参构造后，add("a")为例
 
@@ -504,9 +512,11 @@ private void grow(int minCapacity) {
 
 即可以理解成：**通过ArrayList的默认构造函数，（第一次执行add时）内部数组的容量默认为10**
 
-#### add(int index, E element)
+> 另外扩容的逻辑也在这里grow()
 
-index不能大于集合size，即该方法不能跳跃添加元素，否则报索引越界：
+#### 3.2 add(int index, E element)
+
+其中，index不能大于集合size，即该方法不能跳跃添加元素，否则报索引越界：
 
 ```java
 List<Integer> integerList = new ArrayList<>();
@@ -536,12 +546,437 @@ private void rangeCheckForAdd(int index) {
 }
 ```
 
+#### 3.3 依赖equals
 
-## LinkedList
+ArrayList中的contains(Object o)和remove(Object o)，依赖equals()。
+
+这里以去重为例：
+
+> String类重写了equals()，比较的是字符串本身，而非地址值
+
+```java
+List<String> list = new ArrayList<>();
+list.add("a");
+list.add("b");
+list.add("b");
+List<String> newList = new ArrayList<>();
+Iterator<String> it = list.iterator();
+while (it.hasNext()){
+    String s = it.next();
+    if (!newList.contains(s))
+        newList.add(s);
+}
+System.out.println(newList);
+```
+
+如果是自定义POJO，需要重写equals()
+
+```java
+public class User {
+    private String name;
+    private int age;
+
+    public User(String name, int age) {
+        this.name = name;
+        this.age = age;
+    }
+
+    // getter and setter
+
+    @Override
+    public String toString() {
+        return "User{" + "name='" + name + '\'' + ", age=" + age + '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        User user = (User) o;
+        return age == user.age &&
+                Objects.equals(name, user.name);
+    }
+}
+```
+
+如果User不重写equals()，即使用继承自Object的equals()，比较的是地址值，那么newList中会有3个对象。
+
+```java
+List<User> list = new ArrayList<>();
+list.add(new User("a", 1));
+list.add(new User("b", 1));
+list.add(new User("a", 1));
+List<User> newList = new ArrayList<>();
+Iterator<User> it = list.iterator();
+while (it.hasNext()){
+    User user = it.next();
+    if (!newList.contains(user))
+        newList.add(user);
+}
+System.out.println(newList);
+```
 
 
+---
 
-## Vector
+# III.LinkedList
+
+LinkedList是List基于双向链表的实现。LinkedList中的每个元素是链表的一个节点。元素逻辑上连续，物理存储上不连续。不支持RandomAccess。
+
+> 双向链表的节点包括可前驱和后继引用（指针），单向链表的节点只有后继。
+
+![avatar](http://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/JavaSE/collection/LinkedList.png)
+
+> 抽象类AbstractSequentialList跟ArrayList继承的AbstractList作用相同，也是为了实现接口分离，实现一些通用方法，方便扩展。
+
+另外，LinkedList实现了Deque接口（Double Ended Queues），即可以操作双端队列。（链表本身可以实现队列和栈，所以LinkedList可用作栈、队列、双向队列）
+
+## 1.内部实现
+
+LinkedList使用内部类Node，表示每一个元素节点。每个节点包括元素item、前驱prev和后继next
+
+```java
+private static class Node<E> {
+    E item;
+    Node<E> next;
+    Node<E> prev;
+
+    Node(Node<E> prev, E element, Node<E> next) {
+        this.item = element;
+        this.next = next;
+        this.prev = prev;
+    }
+}
+```
+
+## 2.成员变量
+
+```java
+//链表长度，默认为0
+transient int size = 0;
+//双向链表头节点
+transient Node<E> first;
+//双向链表尾节点
+transient Node<E> last;
+//继承自AbstractList
+protected transient int modCount = 0;
+```
+
+## 3.构造
+
+两个构造。使用无参构造时，size为0，头节点first、尾节点last都为null。
+
+```java
+public LinkedList() {}
+
+public LinkedList(Collection<? extends E> c) {
+    this();
+    addAll(c);
+}
+```
+
+## 4.基本方法
+
+下面使用索引index的方法，都会依赖Node<E> node(int index)方法。即先查找节点，再进行其他操作。
+
+#### 4.1 add(E e)
+
+向链表尾部添加一个元素。
+
+> ArrayList基于数组存储结构实现，在添加元素时，要保证容量足够。但LinkedList在物理上是不连续的，没有容量的定义，所以add时，也不用像ArrayList那样提前分配和保证余量。只需要新增一个Node，然后修改链接即可。
+
+```java
+public boolean add(E e) {
+    linkLast(e);
+    return true;
+}
+
+//尾插法
+void linkLast(E e) {
+    //1.创建新Node，并将prev指向之前的尾节点，next置null
+    final Node<E> l = last;
+    final Node<E> newNode = new Node<>(l, e, null);
+    //2.将该Node作为新尾节点
+    last = newNode;
+    //3.如果链中只有该newNode，将该Node也作为头节点
+    if (l == null)
+        first = newNode;
+    //4.如果链中之前有元素，不用管first。将原尾节点的next指向该节点，完成last和last-1互指
+    else
+        l.next = newNode;
+    size++;
+    modCount++;
+}
+```
+
+#### 4.2 add(int index, E element)
+
+在指定位置插入元素。
+
+> index在[0,size]区间，否则报索引越界
+
+```java
+public void add(int index, E element) {
+    //1.检查index索引的合法性，否则报索引越界
+    checkPositionIndex(index);
+
+    //2.在尾部插入就使用尾插法linkLast（如上），否则在某Node前插入linkBefore
+    if (index == size)
+        linkLast(element);
+    else
+        //node(index)返回索引index位上原本的Node，然后在该Node前插入element
+        linkBefore(element, node(index));
+}
+
+//检查index索引的合法性
+private void checkPositionIndex(int index) {
+    if (!isPositionIndex(index))
+        throw new IndexOutOfBoundsException(outOfBoundsMsg(index));
+}
+private boolean isPositionIndex(int index) {
+    return index >= 0 && index <= size;
+}
+
+//尾插法
+void linkLast(E e) {
+    //见上面add(E e)
+}
+
+//在节点succ前链入e
+void linkBefore(E e, Node<E> succ) {
+    // assert succ != null;
+    final Node<E> pred = succ.prev;//succ是原本在index位上的元素
+    final Node<E> newNode = new Node<>(pred, e, succ);
+    succ.prev = newNode;
+    if (pred == null)
+        first = newNode;
+    else
+        pred.next = newNode;
+    size++;
+    modCount++;
+}
+
+//返回链表中指定index位上的Node
+Node<E> node(int index) {
+    // assert isElementIndex(index);
+    if (index < (size >> 1)) {
+        Node<E> x = first;
+        for (int i = 0; i < index; i++)
+            x = x.next;
+        return x;
+    } else {
+        Node<E> x = last;
+        for (int i = size - 1; i > index; i--)
+            x = x.prev;
+        return x;
+    }
+}
+```
+
+node(int index)方法中，使用了**二分查找**。如果索引位于前半部分（index<(size>>1)），从头开始查找，否则从尾开始查找，以提高效率。同时也验证了之前的结论，ArrayList支持随机访问，查询效率比较高，LinkedList虽然有索引，但不物理内存连续，不支持随机访问，需要从头或尾遍历，效率相对较低。
+
+#### 4.3 remove(int index)
+
+删除索引为index的节点。index需要在区间[0,size)
+
+```java
+public E remove(int index) {
+    //1.检查index合法性
+    checkElementIndex(index);
+    //2.删除index位上的Node
+    return unlink(node(index));
+}
+
+unlink(Node<E> x) {
+    // assert x != null;
+    final E element = x.item;
+    final Node<E> next = x.next;
+    final Node<E> prev = x.prev;
+
+    //处理x.prev指针和x前一个节点的next指针
+    if (prev == null) {
+        first = next;
+    } else {
+        prev.next = next;
+        x.prev = null;
+    }
+    //处理x.next指针和x后一个节点的prev指针
+    if (next == null) {
+        last = prev;
+    } else {
+        next.prev = prev;
+        x.next = null;
+    }
+    //处理x的节点值
+    x.item = null;
+    size--;
+    modCount++;
+    return element;
+}
+
+//检查index合法性
+private void checkElementIndex(int index) {
+    if (!isElementIndex(index))
+        throw new IndexOutOfBoundsException(outOfBoundsMsg(index));
+}
+private boolean isElementIndex(int index) {
+    return index >= 0 && index < size;
+}
+```
+
+#### 4.4 remove(Object o)
+
+根据节点值删除。依赖equals()，所以要求o重写equals()，否则使用继承自Object的equals()是比较地址值。
+
+> 根据值，从头开始遍历，删除第一个匹配的节点后结束。这里也可以看到，LinkedList（List）可以存储null，而且元素可以重复。
+
+```java
+public boolean remove(Object o) {
+    if (o == null) {
+        for (Node<E> x = first; x != null; x = x.next) {
+            if (x.item == null) {
+                unlink(x);  //见上面
+                return true;
+            }
+        }
+    } else {
+        for (Node<E> x = first; x != null; x = x.next) {
+            if (o.equals(x.item)) {
+                unlink(x);
+                return true;
+            }
+        }
+    }
+    return false;
+}
+```
+
+#### 4.5 get(int index)
+
+根据索引获取元素。index需要在区间[0,size)
+
+```java
+public E get(int index) {
+    checkElementIndex(index);//见上面remove(int index)
+    return node(index).item;//见上面add(int index, E element)
+}
+```
+
+## 5.实现List接口
+
+LinkedList实现了List接口，也有继承List接口的实现类（AbstractList和AbstractSequentialList）。所以上述List接口相关的方法，它都可以用。如使用迭代器遍历等。
+
+## 6.实现Deque接口
+
+['dek]，Deque是个双向队列，定义了支持栈和队列的相关方法，所以可以使用LinkedList实现栈、队列的相关操作。Deque继承自单向队列Queue，先来看下Queue接口。
+
+#### 6.1 Queue接口
+
+[kju]，单向队列，入队只能在尾部，出队只能在头部。
+
+```java
+public interface Queue<E> extends Collection<E> {
+    //向队尾添加元素，队列满时，抛IllegalStateException
+    boolean add(E e);
+    //向队尾添加元素，队列满时，返回false，不抛异常
+    boolean offer(E e);
+    //从队头删除一个元素，队列空时，抛NoSuchElementException
+    E remove();
+    //从队头删除一个元素，队列空时，返回null，不抛异常
+    E poll();
+    //返回队头元素，不改变队列，队列空时，抛NoSuchElementException
+    E element();
+    //返回队头元素，不改变队列，队列空时，返回null，不抛异常
+    E peek();
+}
+```
+
+可以发现，队列同一个操作都有两个方法实现，主要区别在于对于一些极端情况的处理上，如队空、队满。另外，对于LinkedList实现的队列而言，队列容量没有限制，可以无限大，但对于像ArrayDeque这样的队列，就有容量限制，存在队列满的情况。
+
+#### 6.2 Deque接口
+
+**栈**是一种FILO数据结构，只操作头部。Deque中定义了一些栈相关操作的方法，并在LinkedList中给予实现，所以使用LinkedList可以实现队列操作。
+
+> 源自JDK 1.0的java.util.Stack（继承自Vector）就是栈这一数据结构在Java中的实现，但现在很少使用。
+
+**队列**是一种FIFO数据结构，两端都操作。但尾部只添加、头部只查看和删除。但Deque更为通用，可以操作两端。即除了上述栈操作方法，它还支持双向队列操作。
+
+```java
+public interface Deque<E> extends Queue<E> {
+    ...
+
+    /* 栈操作方法 */
+    //入栈，如果栈容量已满，抛IllegalStateException
+    void push(E e);
+    //出栈，如果栈已空，抛NoSuchElementException
+    E pop();
+    //查看栈顶元素，栈为空时，返回null，不抛异常
+    E peek();
+
+    /* 双向队列操作方法 */
+    //向双向队列头部添加元素，如果队列已满，抛IllegalStateException
+    void addFirst(E e);
+    //向双向队列尾部添加元素，如果队列已满，抛IllegalStateException
+    void addLast(E e);
+    //向双向队列头部添加元素，如果队列已满，返回false，不抛异常
+    boolean offerFirst(E e);
+    //向双向队列尾部添加元素，如果队列已满，返回false，不抛异常
+    boolean offerLast(E e);
+    //删除双向队列头部元素，如果队列为空，抛NoSuchElementException
+    E removeFirst();
+    //删除双向队列尾部元素，如果队列为空，抛NoSuchElementException
+    E removeLast();
+    //删除双向队列头部元素，如果队列为空，返回null，不抛异常
+    E pollFirst();
+    //删除双向队列尾部元素，如果队列为空，返回null，不抛异常
+    E pollLast();
+    //获取双向队列头部元素，不改变结构，如果队列为空，抛NoSuchElementException
+    E getFirst();
+    //获取双向队列尾部元素，不改变结构，如果队列为空，抛NoSuchElementException
+    E getLast();
+    //获取双向队列头部元素，不改变结构，如果队列为空，返回null，不抛异常
+    E peekFirst();
+    //获取双向队列尾部元素，不改变结构，如果队列为空，返回null，不抛异常
+    E peekLast();
+    //删除双向队列中第一次出现的元素o，如果不包含o，返回false
+    boolean removeFirstOccurrence(Object o);
+    //删除双向队列中最后一次出现的元素o，如果不包含o，返回false
+    boolean removeLastOccurrence(Object o);
+    //获取双向队列逆序迭代器
+    Iterator<E> descendingIterator();
+}
+```
+
+## 7.迭代器
+
+LinkedList有以下4种获取迭代器的方式。跟ArrayList相似，会有并发修改异常。
+
+```java
+//1.继承自AbstractList，返回从头向尾的单向迭代器Iterator
+Iterator<E> iterator()
+
+//2.实现自List，返回从index位置开始的的双向迭代器
+public ListIterator<E> listIterator(final int index) {
+    rangeCheckForAdd(index);
+
+    return new ListItr(index);
+}
+
+//3.实现自Deque，返回从尾向头的单向Iterator迭代器
+public Iterator<E> descendingIterator() {
+    return new DescendingIterator();
+}
+
+//4.返回LinkedList的并行Spliterator迭代器
+default Spliterator<E> spliterator() {
+    return Spliterators.spliterator(this, Spliterator.ORDERED);
+}
+```
+
+
+---
+
+# IV.Vector
 
 自JDK1.0，比Collection（JDK1.2）体系还早。后来归入到List接口下，但被同是基于数组的ArrayList代替。
 

@@ -65,11 +65,37 @@ public class LinkedList<E> extends AbstractSequentialList<E> implements List<E>,
 }
 ```
 
+## 扩展
+
+稍微扩展下数据结构和数据存储结构，方便后面内容的理解。
+
+- 数据结构：队列、栈
+- 数据存储结构：数组、链表
+
+> 队列和栈区别
+
+- 队列：FIFO，两端都能操作，但尾部只进不出，头部只出不进
+- 栈：FILO，只能操作栈顶
+
+**队列和栈都可以使用数组和链表实现。**
+
+> 数组和链表的区别
+
+||存储|长度|数据访问|
+|:--|:---|:--|:------|
+|数组|顺序存储|固定|随机访问快捷，数据移动麻烦|
+|链表|非顺序存储，前驱和后继|可伸缩|访问麻烦，需要从头/尾顺延，数据移动方便|
+
+数组和链表的差异决定了它们的使用场景。如果访问数据频繁，可使用数组；如果数据移位较多，可使用链表。
+
+
 ---
 
 # II.Collection
 
 数组长度是固定的，不够灵活。Java提供了可以存储任意对象、长度可变的集合（可变容器）。
+
+![avatar](http://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/JavaSE/collection/collection-system.png)
 
 > **和数组的区别**
 
@@ -311,6 +337,8 @@ while(it.hasNext()) {
 ## 1.概述
 
 双列集合的根接口。是个顶级接口（不像Collection还继承了Iterable）
+
+![avatar](http://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/JavaSE/collection/map-system.png)
 
 - 1.将键映射到值
 - 2.键唯一，不可重复（每个键只能映射一个值）
