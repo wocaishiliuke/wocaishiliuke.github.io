@@ -106,6 +106,10 @@ for (int i = 0; i < list.size(); i++) {
 }
 ```
 
+**ArrayList的索引遍历比iterator遍历快，LinkedList的iterator遍历比索引遍历快。**实际使用中注意选择最佳方式。
+
+> ArrayList实现了RandomAccess，使用索引随机访问效率更高。而LinkedList的索引是隐式的（逻辑上的，物理上不连续没有偏移量），不支持随机访问，使用索引访问还要从头/尾查找，效率比iterator遍历还低。可以使用代码测试，但具体原因是跟局部性原理（CPU缓存）有关？（不确定TODO）
+
 ## 2.并发修改异常
 
 ConcurrentModificationException。即在遍历时，增删元素，报出的异常。使用Iterator或foreach时都会出现该异常。

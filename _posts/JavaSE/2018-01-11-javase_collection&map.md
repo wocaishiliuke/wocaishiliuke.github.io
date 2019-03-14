@@ -15,6 +15,7 @@ tags:
 - [X] I.概述
 - [x] II.Collection
 - [x] III.Map
+- [x] IV.参考
 
 
 ---
@@ -181,7 +182,7 @@ public interface Collection<E> extends Iterable<E> {
 
 ## 2.AbstractCollection
 
-Java集合框架中，一个接口往往会对应一个抽象类，实现接口中的一些通用方法。Collection接口也有AbstractCollection抽象类，提供基于迭代器Iterator的contains、remove等一些方法的实现，方便实现类更轻松地实现Collection接口。
+Java集合框架中，一个接口往往会对应一个抽象类，实现接口中的一些通用方法。Collection接口也有AbstractCollection抽象类，提供基于迭代器Iterator的contains、remove、toString等一些方法的实现，方便实现类更轻松地实现Collection接口。
 
 ```java
 public abstract class AbstractCollection<E> implements Collection<E> {
@@ -321,11 +322,18 @@ for (int i = 0; i < arr.length; i++) {
 
 - 2.迭代器遍历
 
+包括原生迭代、JDK1.5提供的语法糖foreach
+
 ```java
 Iterator<String> it = c.iterator();
 while(it.hasNext()) {
     String s = it.next();
     // do something..
+}
+
+//增强for循环
+for (String s : c) {
+    System.out.println(s);
 }
 ```
 
@@ -359,7 +367,7 @@ public interface Map<K,V> {
     boolean containsValue(Object value);
     // 获取key对应的value
     V get(Object key);
-    // 存入键值对
+    // 存入键值对，键已存在则替换旧值
     V put(K key, V value);
     // 删除键值对
     V remove(Object key);
@@ -612,3 +620,11 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
     ...
 }
 ```
+
+
+---
+
+# IV.参考
+
+- [javase collections overview](https://docs.oracle.com/javase/8/docs/technotes/guides/collections/overview.html)
+- [Java编程拾遗](http://lidol.top/category/java/detail)
