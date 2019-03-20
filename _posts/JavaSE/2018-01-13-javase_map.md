@@ -239,7 +239,7 @@ public HashMap(int initialCapacity) {
 }
 ```
 
-#### 构造1
+#### 构造4
 
 HashMap(Map<? extends K, ? extends V> m)
 
@@ -299,7 +299,7 @@ final void putMapEntries(Map<? extends K, ? extends V> m, boolean evict) {
 
 首先，这4个构造都对loadFactor成员变量赋了值。其次：
 
-构造1就没有更多操作了。没有为table创建Node<K,V>[]数组，即HashMap创建初始化后table=null。threshold和数组长度也没指定。是在第一次put操作时调用resize()，在其中创建16长度的table，指定threshold=0.75。
+构造1就没有更多操作了。没有为table创建Node<K,V>[]数组，**即HashMap创建初始化后table=null**。threshold和数组长度也没指定。是在第一次put操作时调用resize()，在其中创建16长度的table，指定threshold=0.75。
 
 构造2和3，也没有为table创建Node<K,V>[]数组，即table=null。但指定了数组长度，只不过该长度暂存到threshold成员上。第一次put时，会在resize()中会再赋值给数组长度（当然会转化成稍大的2^n），即创建数组table，而threshold的值也是在resize()中指定。
 
@@ -422,7 +422,7 @@ JDK1.8的HashMap和之前版本的不同：
 i = (n - 1) & hash
 ```
 
-> 其中的取模运算，在JDK1.7中是个独立的方法indexFor()，和JDK1.8的 实现原理一样。
+> 其中的取模运算，在JDK1.7中是个独立的方法indexFor()，但和JDK1.8的实现原理一样。
 
 首先通过1、2步计算hash值。如果两个key的key.hashCode()相同，那么经过上述1、2步计算得到的hash值总是相同的，即hash冲突，此时会覆盖或链入或挂树。
 
@@ -646,7 +646,7 @@ void transfer(Entry[] newTable, boolean rehash) {
 
 元素保持index位置不变，还是移动2次幂，关键看：和(n-1)新增位（上图中的红色位）对应的hash值中的bit位，是0还是1。于是在JDK1.8中做了优化：检查原hash值中新增参与位于运算的那个bit位，是1还是0。是0索引不变，是1索引变成"原索引+oldCap"。
 
-![avatar](https://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/JavaSE/collection/hashMap8_resize.pngs)
+![avatar](https://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/JavaSE/collection/hashMap8_resize.png)
 
 JDK1.8的这个设计非常巧妙，在节省重新计算hash值的时间。同时，新增参与位于运算的bit位是0还是1，可以认为是随机的，因此resize的过程，也会把之前的冲突节点分散到新的bucket上。
 
@@ -893,7 +893,7 @@ e = next = 1-A
 
 - 6.接着执行Thread1最后一个循环，此时局部变量：e指向5-B，next=null
 
-本次循环使得：Thread1的newTable[1]指回5-B，并将5-B的next指向之前的链头1-A，**环链形成**。测试局部变量e=null，循环结束
+本次循环使得：Thread1的newTable[1]指回5-B，并将5-B的next指向之前的链头1-A，**环链形成**。此时局部变量e=null，循环结束
 
 ![avatar](https://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/JavaSE/collection/java7_hashMap_Infinite_loop5.png)
 
@@ -912,13 +912,158 @@ Exception in thread "Thread2" java.lang.OutOfMemoryError: Java heap space
 JDK1.8中的HashMap在扩容时，不是使用JDK1.7的这种重组链表的方式，而是通过维护两个链表指针loHead、loTail、hiHead、hiTail，只是将元素添加到两个链表的尾部，并不需要头部链接（**平移代替头插法**），所以即使是多线程场景，也不会产生环链。但是由于table是成员变量，由Thread1和Thread2共享，所以在Thread1调度回来重组链表的时候，仍会覆盖Thread2写的数据，即HashMap是线程不安全的。
 
 
----
+## 遍历
 
-# III.LinkedHashMap
+```java
+HashMap<String,Object> map = new HashMap<>(8);
+map.put("1", "A");
+map.put("2", "B");
+```
+
+#### 通过键集合
+
+可以使用Iterator和foreach
+
+```java
+Set<String> keys = map.keySet();
+Iterator<String> it = keys.iterator();
+while(it.hasNext()){
+    String key = it.next();
+    System.out.println(key + " = " + map.get(key));
+}
+```
+
+```java
+for (String key : map.keySet()) {
+    System.out.println(key + " = " + map.get(key));
+}
+```
+
+#### 通过键值对集合
+
+也可以使用Iterator和foreach两种形式，推荐语法糖更优雅
+
+```java
+Set<Map.Entry<String, Object>> entries = map.entrySet();
+Iterator<Map.Entry<String, Object>> it = entries.iterator();
+while (it.hasNext()) {
+    Map.Entry<String, Object> entry = it.next();
+    System.out.println(entry.getKey() + " = " + entry.getValue());
+}
+```
+
+```java
+for (Map.Entry<String,Object> entry : map.entrySet()) {
+    System.out.println(entry.getKey() + " = " + entry.getValue());
+}
+```
+
+## 键唯一
+
+HashMap的键唯一是通过如下比较实现的：
+
+```java
+if (p.hash == hash && ((k = p.key) == key || (key != null && key.equals(k))))
+```
+
+上述比较依赖两个方法：**先比较hash值，hash值相同时再比较equals**。
+
+> **hash值不同，key肯定不同，但hash值相同，key也不一定是相同，还需要具体比较equals**。hash值比较的是两个int值，效率比两个对象直接equals更高。所以先使用hash值过滤大部分情况，降低equals()的使用次数。基本数据类型的包装类、String等都重写了这两个方法。
+
+#### hashCode()
+
+> 如《确定数组索引》小节所述，通过(h = key.hashCode()) ^ (h >>> 16)计算hash值，再和n-1进行位于取模。如果key.hashCode()相同，那么高位运算得到的hash值也总是相同的，即hash冲突。**所以key类中需要重写hashCode()，好的hash算法首先会规避很多碰撞**。
+
+重写hashCode()的原则：
+- 1.属相相同的对象，给出的哈希值必须相同
+- 2.属相不同的对象，给出的哈希值尽量不同
 
 
----
+#### equals()
 
-# IV.参考
+hash碰撞，并不一定表示key相同。所以在putVal()中又调用了key.equals()。**在hash值相同的时候，进一步判断key是否真的相同。所以key类中需要重写equals()**。
 
-- [Java编程拾遗](http://lidol.top/category/java/detail/)
+重写equals()的原则：
+- 1.属相相同的对象，返回true
+- 2.属相不同的对象，返回false
+
+#### Object中的hashCode和equals
+
+- hashCode()返回对象地址的int值
+- equals()其实就是==，比较地址值
+
+```java
+public class Object {
+    //在native层生成的，非Java代码实现
+    public native int hashCode();
+
+    public boolean equals(Object obj) {
+        return (this == obj);
+    }
+    ...
+}
+```
+
+> A native method is a Java method whose implementation is provided by non-java code.
+
+#### 示例
+
+这里使用编辑器提供的模板重写
+
+```java
+public class User {
+    private String name;
+    private int age;
+
+    //setter and getter
+
+    @Override
+    public String toString() { ... }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        User user = (User) o;
+        return age == user.age && Objects.equals(name, user.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, age);
+    }
+}
+```
+
+这里使用了Objects（since 1.7）类的hash方法
+
+```java
+//Objects（since 1.7）的hash()
+public static int hash(Object... values) {
+    return Arrays.hashCode(values);
+}
+
+//Arrays的hashCode()
+public static int hashCode(Object a[]) {
+    if (a == null) return 0;
+    int result = 1;
+    for (Object element : a)
+        //31×1+地址值
+        result = 31 * result + (element == null ? 0 : element.hashCode());
+    return result;
+}
+```
+
+**为什么是31？**
+
+> 除了Arrays的hashCode()外，String的hashCode()也是使用了31
+
+- a.**31是不大不小的质子数**
+
+素数不容易冲突，而太小的素数也不合适，范围太小，太大可能超出int的最大范围。
+
+> 国外有人做的测试：对超过50,000个英文单词进行hashCode，使用常数31, 33, 37, 39, 41作为乘子，每个常数算出的哈希值冲突数都小于7个，那么这几个数就被作为生成hashCode的备选乘数了。
+
+- b.**31可以被JVM优化**
+　
+31 * i = (i << 5) - i，JVM可以使用位运算更高效的计算。
