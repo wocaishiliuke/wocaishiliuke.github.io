@@ -14,6 +14,8 @@ tags:
 ##### 目录
 - [X] I.Map
 - [X] II.HashMap
+- [X] III.LinkedHashMap
+- [X] IV.参考
 
 
 ---
@@ -42,11 +44,13 @@ transient Node<K,V>[] table;
 int threshold;
 //负载因子
 final float loadFactor;
-//k-v对数
+//存入的k-v对数
 transient int size;
 //修改次数
 transient int modCount;
 ```
+
+> modCount用来记录HashMap内部结构发生变化的次数，便于迭代中的安全判断（并发修改异常）。这里的变化指的是结构变化。如果put()时key已存在，只是value值的覆盖，就不属于结构变化。
 
 > 一些关键值
 
@@ -74,7 +78,7 @@ static final int MIN_TREEIFY_CAPACITY = 64;
 
 ![avatar](http://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/JavaSE/collection/hashmap-structure.png)
 
-其中，数组指Node<K,V>[] table。Node是HashMap的内部类（JDK1.8前叫Entry），实现了Map.Entry接口。Node本质就是K-V键值对，额外还有2个属性hash和next，分别表示key的哈希值和相邻节点引用(组织链表)。
+其中，数组指Node<K,V>[] table。Node是HashMap的内部类（JDK1.8前叫Entry），实现了Map.Entry接口。Node本质就是K-V键值对，额外还有2个属性hash和next，分别表示key的哈希值和下一节点引用(组织链表)。
 
 ```java
 static class Node<K,V> implements Map.Entry<K,V> {
@@ -122,7 +126,7 @@ static class Node<K,V> implements Map.Entry<K,V> {
 
 - Hash碰撞
 
-如上图所示，HashMap使用哈希表来存储。哈希表存在hash冲突问题，可以采用开放地址法、链地址法等方式解决。**HashMap采用了链地址法，即数组+链表结合**，数组元素是链表。当数据被Hash后，得到数组下标，把数据放在对应下标的链表上。如：
+如上图所示，HashMap使用哈希表来存储。哈希表存在hash冲突问题，可以采用开放地址法、链地址法等方式解决。**HashMap采用了链地址法，即数组+链表结合**。当数据被Hash后，得到数组下标，把数据放在对应下标的链表上。如：
 
 ```java
 map.put("a", 1);
@@ -132,7 +136,7 @@ map.put("a", 1);
 
 当两个key定位到相同的位置，就表示发生了**Hash碰撞**。当然Hash冲突的几率跟Hash算法有关，好的Hash算法计算结果分散均匀，Hash碰撞的概率也就越小，HashMap的存取效率就会越高。
 
-当然，如果哈希桶数组table很大，即使较差的Hash算法也会比较分散，如果数组长度很小，即使好的Hash算法也会出现较多碰撞。**这就需要在空间成本和时间成本之间权衡：即根据实际情况确定数组长度，并在此基础上设计好的Hash算法减少Hash碰撞**。
+当然，如果哈希数组table很大，即使较差的Hash算法也会比较分散（mod取模），如果数组长度很小，即使好的Hash算法也会出现较多碰撞。**这就需要在空间成本和时间成本之间权衡：即根据实际情况确定数组长度，并在此基础上设计好的Hash算法减少Hash碰撞**。
 
 > 就是因为有hash碰撞，HashMap才使用链地址法。若仅用数组就能完美实现HashMap，就不会搞这么复杂。
 
@@ -145,8 +149,6 @@ map.put("a", 1);
 **默认的负载因子0.75是对空间和时间效率的一个平衡选择**，建议不要修改，除非在时间和空间比较特殊的情况下。比如如果内存空间很多而且对时间效率要求很高，可以适当降低负载Load factor，如果内存空间紧张而对时间效率要求不高，可以适当增大负载loadFactor。另外loadFactor可以大于1。
 
 - 数组长度设计
-
-size指当前HashMap中存入的键值对数。modCount用来记录HashMap内部结构发生变化的次数，便于迭代中的安全判断（并发修改异常）。这里的变化指的是结构变化，如put()时key已存在，只是value值的覆盖，就不属于结构变化。
 
 在HashMap中，哈希桶数组table的长度必须为2的n次方，这是一种非常规的设计。[常规的设计是把桶的大小设计为素数](https://blog.csdn.net/liuqiyao_01/article/details/14475159)，因为素数导致冲突的概率要小于合数，比如Hashtable的初始化桶大小就是11（但它扩容后不能保证还是素数）。HashMap之所以采用这种非常规设计，主要是为了在取模和扩容时做优化，同时为了减少冲突，HashMap定位哈希桶索引位置时，也加入了高位参与运算的过程。
 
@@ -908,3 +910,15 @@ Exception in thread "Thread2" java.lang.OutOfMemoryError: Java heap space
 ```
 
 JDK1.8中的HashMap在扩容时，不是使用JDK1.7的这种重组链表的方式，而是通过维护两个链表指针loHead、loTail、hiHead、hiTail，只是将元素添加到两个链表的尾部，并不需要头部链接（**平移代替头插法**），所以即使是多线程场景，也不会产生环链。但是由于table是成员变量，由Thread1和Thread2共享，所以在Thread1调度回来重组链表的时候，仍会覆盖Thread2写的数据，即HashMap是线程不安全的。
+
+
+---
+
+# III.LinkedHashMap
+
+
+---
+
+# IV.参考
+
+- [Java编程拾遗](http://lidol.top/category/java/detail/)
