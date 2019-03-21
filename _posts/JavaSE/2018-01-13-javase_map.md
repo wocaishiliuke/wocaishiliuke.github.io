@@ -33,9 +33,11 @@ HashMap实现了Map接口，继承了抽象类AbstractMap，可克隆，可被�
 
 ![avatar](http://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/JavaSE/collection/HashMap.png)
 
-## 成员变量
+## 1.成员变量
 
 > 一些重要的成员变量
+
+分清哪些是成员变量，哪些是线程内的方法局部变量，便于理解HashMap的线程安全问题。
 
 ```java
 //用来存储Node节点的数组，JDK1.8之前叫Entry<K,V>[] table
@@ -50,7 +52,7 @@ transient int size;
 transient int modCount;
 ```
 
-> modCount用来记录HashMap内部结构发生变化的次数，便于迭代中的安全判断（并发修改异常）。这里的变化指的是结构变化。如果put()时key已存在，只是value值的覆盖，就不属于结构变化。
+modCount用来记录HashMap内部结构发生变化的次数，便于迭代中的安全判断（并发修改异常）。这里的变化指的是结构变化。如果put()时key已存在，只是value值的覆盖，就不属于结构变化。
 
 > 一些关键值
 
@@ -68,11 +70,11 @@ static final int TREEIFY_THRESHOLD = 8;
 static final int MIN_TREEIFY_CAPACITY = 64;
 ```
 
-## 实现原理
+## 2.实现原理
 
-讲解具体方法前，先阐述下HashMap的实现原理，便于理解。
+讲解具体方法前，先大概阐述下HashMap的实现原理，便于理解。
 
-#### 结构
+#### 2.1 结构
 
 结构实现上，HashMap采用【数组+链表/红黑树】（JDK1.8新增红黑树优化），即链地址法：
 
@@ -122,7 +124,7 @@ static class Node<K,V> implements Map.Entry<K,V> {
 }
 ```
 
-#### 原理
+#### 2.2 原理
 
 - Hash碰撞
 
@@ -150,16 +152,20 @@ map.put("a", 1);
 
 - 数组长度设计
 
-在HashMap中，哈希桶数组table的长度必须为2的n次方，这是一种非常规的设计。[常规的设计是把桶的大小设计为素数](https://blog.csdn.net/liuqiyao_01/article/details/14475159)，因为素数导致冲突的概率要小于合数，比如Hashtable的初始化桶大小就是11（但它扩容后不能保证还是素数）。HashMap之所以采用这种非常规设计，主要是为了在取模和扩容时做优化，同时为了减少冲突，HashMap定位哈希桶索引位置时，也加入了高位参与运算的过程。
+在HashMap中，**哈希数组table的长度必须为2的n次方**，这是一种非常规的设计。[常规的设计是把桶的大小设计为素数](https://blog.csdn.net/liuqiyao_01/article/details/14475159)，因为素数导致冲突的概率要小于合数，比如Hashtable的初始化桶大小就是11（但它扩容后不能保证还是素数）。HashMap之所以采用这种非常规设计，主要是为了在取模和扩容时做优化。
+
+- 高位运算
+
+为了减少冲突，HashMap定位哈希数组索引位置时，也加入了**高位参与运算**的过程，防止低位相同高位不同的hash值的冲突。
 
 - 红黑树优化
 
-即使负载因子和Hash算法设计的再合理，也可能出现拉链过长的情况。一旦出现拉链过长，会严重影响HashMap的性能。**在JDK1.8中，引入了红黑树进行优化：当链表长度过长（默认超过8并且数组长度大于64）时，就将链表转换为红黑树，利用红黑树增删改查快速的特点提高HashMap的性能**。
+即使负载因子和Hash算法设计的再合理，也可能出现拉链过长的情况，此时会严重影响HashMap的性能。在JDK1.8中，引入了红黑树进行优化：**当链表长度过长（默认超过8并且数组长度大于64）时，就将链表转换为红黑树，利用红黑树增删改查快速的特点提高HashMap的性能**。
 
 
-## 构造方法
+## 3.构造方法
 
-#### 构造1
+#### 3.1 构造1
 
 空参构造HashMap()
 
@@ -175,10 +181,10 @@ public HashMap() {
 }
 ```
 
-- JDK1.8：空参构造仅对负载因子进行赋值0.75，不对threashold初始化。threshold的赋值放在了put()中，在第一次put操作时，会进行resize，并指定threshold赋值
-- JDK1.7：空参构造会对负载因子进行赋值0.75，会对threashold初始化，但只是将DEFAULT_INITIAL_CAPACITY暂存到threashold成员变量上，并不是真正的扩容阈值。也在第一次put时，在inflateTable()中将threashold的值还给数组长度，并指定真正的threashold阈值。
+- JDK1.8：空参构造仅对负载因子赋值0.75，不对threashold初始化。threshold的赋值放在了resize()中，在第一次put操作时，会进行resize，并指定threshold赋值
+- JDK1.7：空参构造会对负载因子赋值0.75，会对threashold初始化，但只是将DEFAULT_INITIAL_CAPACITY暂存到threashold成员变量上，并不是真正的扩容阈值。也在第一次put时，在inflateTable()中将threashold的值还给数组长度，并指定真正的threashold阈值。
 
-#### 构造2
+#### 3.2 构造2
 
 HashMap(int initialCapacity, float loadFactor)
 
@@ -223,11 +229,11 @@ Map<Stirng, Object> map = new HashMap(13, 0.75);
 ```
 
 - JDK1.8：初始化得到的HashMap，loadFactor=0.75，threashold=16（这里的threashold的值实际是数组长度，在第一次put()时会进行resize，对threashold重新赋值）
-- JDK1.7：初始化得到的HashMap，loadFactor=0.75，threashold=13
+- JDK1.7：初始化得到的HashMap，loadFactor=0.75，threashold=13（这里也只是指定的数组长度，在第一次put()时会进行inflateTable()，对threashold重新赋值，并对数组长度13处理到2^n，即16）
 
-在这两个版本的JDK中，该构造都对threashold进行了赋值，但都不是真正的threashold阈值，而是第一次put中要使用的数组长度值，真正的阈值也都是在第一次put中指定的。另外，1.8中会提前格式化数组长度（2^n），而1.7中是直接赋值，在put操作的inflateTable()中使用roundUpToPowerOf2()完成长度格式化。
+> 在这两个版本的JDK中，该构造都对threashold进行了赋值，但都不是真正的threashold阈值，而是第一次put中要使用的数组长度值，真正的阈值也都是在第一次put中指定的。另外，1.8中会提前格式化数组长度（2^n），而1.7中是直接赋值，在put操作的inflateTable()中使用roundUpToPowerOf2()完成长度格式化。
 
-#### 构造3
+#### 3.3 构造3
 
 HashMap(int initialCapacity)
 
@@ -239,18 +245,18 @@ public HashMap(int initialCapacity) {
 }
 ```
 
-#### 构造4
+#### 3.4 构造4
 
 HashMap(Map<? extends K, ? extends V> m)
 
 ```java
 public HashMap(Map<? extends K, ? extends V> m) {
-    this.loadFactor = DEFAULT_LOAD_FACTOR;
+    this.loadFactor = DEFAULT_LOAD_FACTOR;//0.75
     putMapEntries(m, false);
 }
 ```
 
-通过一个Map初始化HashMap，负载因子loadFactor为默认值0.75。然后调用putMapEntries()，将Map中的键值对放入HashMap。
+通过一个Map初始化HashMap，负载因子为默认值0.75。然后调用putMapEntries()，将Map中的键值对放入HashMap。
 
 > putMapEntries方法第二个参数控制插入后是否进行检查，清除最老元素。LinkedHashMap按访问有序的情况下才会是true，关于这个参数，详见LinkedHashMap
 
@@ -293,11 +299,11 @@ final void putMapEntries(Map<? extends K, ? extends V> m, boolean evict) {
 
 > threshold ≥ t是tableSizeFor()保证的，t > (ft-1)是取整保证的（不考虑ft超出MAXIMUM_CAPACITY的情况）
 
-由于在putVal插入第一个键值对时，会进行resize，这里的threshold=2^n就变成数组length，最终的threshold = length * 0.75 = 2^n * 0.75。所以在插入第一个元素resize后，s肯定小于当前HashMap最终的threshold，即可以容纳Map中所有的键值对，而且期间不需要扩容，设计还是比较巧妙的。
+由于在putVal插入第一个键值对时，会进行resize，这里的threshold=2^n就变成数组length，最终的threshold = length * 0.75 = 2^n * 0.75。所以在插入第一个元素resize后，s肯定小于当前HashMap最终的threshold，即可以容纳下Map的所有键值对，期间不需要扩容，设计比较巧妙。
 
-#### 注意
+#### 3.5 注意
 
-首先，这4个构造都对loadFactor成员变量赋了值。其次：
+首先，这4个构造都对负载因子loadFactor赋了值。其次：
 
 构造1就没有更多操作了。没有为table创建Node<K,V>[]数组，**即HashMap创建初始化后table=null**。threshold和数组长度也没指定。是在第一次put操作时调用resize()，在其中创建16长度的table，指定threshold=0.75。
 
@@ -306,7 +312,7 @@ final void putMapEntries(Map<? extends K, ? extends V> m, boolean evict) {
 构造4中有put操作，所以也是在第一次执行putVal()时调用resize()，创建table（确定数组长度）和指定threshold。
 
 
-## put(K key, V value)
+## 4.put(K key, V value)
 
 put操作的流程如下：
 
@@ -402,13 +408,7 @@ final void treeifyBin(Node<K,V>[] tab, int hash) {
 }
 ```
 
-JDK1.8的HashMap和之前版本的不同：
-
-||实现结构|put时的链表插入|key的哈希值的计算方式|resize的实现|
-|JDK1.8|数组+链表/红黑树|尾插法|优化了高位运算，通过hashCode()的高16位异或低16位实现|resize不会产生环链，避免导致cpu使用率飙升到100%，但仍有数据丢失的可能|
-|之前版本|数组+链表|头插法|-|旧链表迁移的时候，如果在新表的数组索引位置相同，则链表元素会倒置，而JDK1.8会保持原来链表的顺序|
-
-#### 确定数组索引
+#### 4.1 确定数组索引
 
 上面put操作中，确定索引的过程，可以分为3步：
 - 1.key.hashCode()
@@ -422,7 +422,7 @@ JDK1.8的HashMap和之前版本的不同：
 i = (n - 1) & hash
 ```
 
-> 其中的取模运算，在JDK1.7中是个独立的方法indexFor()，但和JDK1.8的实现原理一样。
+> 其中的取模运算，在JDK1.7中是个独立的方法indexFor()，是和JDK1.8的实现方式（位于运算）一样。
 
 首先通过1、2步计算hash值。如果两个key的key.hashCode()相同，那么经过上述1、2步计算得到的hash值总是相同的，即hash冲突，此时会覆盖或链入或挂树。
 
@@ -443,7 +443,7 @@ i = (n - 1) & hash
 
 ![avatar](https://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/JavaSE/collection/put_cal_index.png)
 
-#### 扩容
+#### 4.2 扩容
 
 数组是固定长度的，扩容当然是用新大数组代替旧小数组。
 
@@ -539,7 +539,7 @@ final Node<K,V>[] resize() {
 
 上面4个构造中提到，它们都没有指定threshold，就是在这里指定的。另外构造2和构造3中寄存在threshold变量中的数组长度，也是在这里还给newCap，继而完成table的创建。
 
-#### JDK1.7中的put
+#### 4.3 JDK1.7的put
 
 ```java
 public V put(K key, V value) {
@@ -618,7 +618,7 @@ void transfer(Entry[] newTable, boolean rehash) {
 }
 ```
 
-在JDK1.7的resize()中的数据转移transfer()时，会遍历原数组，rehash后，组织到新数组中：采用单链表的头插法，同一索引上的新元素总会被插到链表的头部，即链表会顺序颠倒（1.8则保持转移后顺序不变）。
+在JDK1.7的resize()中的数据转移transfer()时，会遍历原数组，rehash后，组织到新数组中：采用单链表的头插法，即链表会顺序颠倒（1.8则保持转移后顺序不变）。
 
 示例：假设哈希数组table长度为2，负载因子loadFactor=1，阈值=2*1=2，依次将key=3、7、5执行put:
 
@@ -636,9 +636,19 @@ void transfer(Entry[] newTable, boolean rehash) {
 
 ![avatar](http://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/JavaSE/collection/hashMap7_resize.png)
 
-#### JDK1.8中的扩容优化
+#### 4.4 JDK1.8中优化
 
-> 在Java8中，除了引入红黑树外，对于链表的处理跟JDK1.7中也有区别：**不用rehash了，通过直接判断对应高位（n-1对应的高位），确定在新数组中的index，效率较高。
+JDK1.8的HashMap和之前版本的不同（优化）：
+
+||实现结构|put时的链表插入|key的哈希值的计算方式|resize的实现|
+|JDK1.8|数组+链表/红黑树|尾插法|优化了高位运算，通过hashCode()的高16位异或低16位实现|resize不会产生环链，避免导致cpu使用率飙升到100%，但仍有数据丢失的可能|
+|之前版本|数组+链表|头插法|-|旧链表迁移的时候，如果在新表的数组索引位置相同，则链表元素会倒置，而JDK1.8会保持原来链表的顺序|
+
+- 红黑树优化
+- 确定索引时的高位运算
+- 扩容数据迁移时，使用bit位判断代替rehash，使用平移代替会倒序的头插法（不会环链）
+
+JDK1.8中，**数据迁移时不需要rehash，而是通过直接判断对应高位（n-1对应的高位），确定在新数组中的index（原位置或原位置+cap），效率较高**。
 
 上图中，我们使用2次幂扩展（长度×2）后，**元素要么是在原位置，要么在原位置移动2次幂个位置上**（如上的1和3）。以16扩到32为例：
 
@@ -652,154 +662,13 @@ JDK1.8的这个设计非常巧妙，在节省重新计算hash值的时间。同�
 
 另外，JDK1.7中，在旧链表迁移时，如果在新表的数组索引位置没有变化，则链表元素会倒置。但JDK1.8中不会倒置。
 
-
-## get(Object key)
-
-```java
-public V get(Object key) {
-    Node<K,V> e;
-    return (e = getNode(hash(key), key)) == null ? null : e.value;
-}
-
-final Node<K,V> getNode(int hash, Object key) {
-    Node<K,V>[] tab; Node<K,V> first, e; int n; K k;
-    //获取key所在数组索引上的第一个元素first
-    if ((tab = table) != null && (n = tab.length) > 0 &&
-        (first = tab[(n - 1) & hash]) != null) {
-        if (first.hash == hash && //比较第一个元素first与key是否相等
-            ((k = first.key) == key || (key != null && key.equals(k))))
-            return first;
-        //第一个元素不相等，遍历first的后继元素
-        if ((e = first.next) != null) {
-            //如果是红黑树，则取遍历红黑树，获取与key相等的TreeNode节点
-            if (first instanceof TreeNode)
-                return ((TreeNode<K,V>)first).getTreeNode(hash, key);
-            do {
-                //遍历链表，获取与key相等的Node节点
-                if (e.hash == hash &&
-                    ((k = e.key) == key || (key != null && key.equals(k))))
-                    return e;
-            } while ((e = e.next) != null);
-        }
-    }
-    return null;
-}
-```
-
-## containsKey(Object key)
-
-map中是否包含key
-
-```java
-public boolean containsKey(Object key) {
-    return getNode(hash(key), key) != null;
-}
-```
-
-## containsValue(Object value)
-
-双重遍历
-
-```java
-public boolean containsValue(Object value) {
-    Node<K,V>[] tab; V v;
-    if ((tab = table) != null && size > 0) {
-        //遍历数组
-        for (int i = 0; i < tab.length; ++i) {
-            //遍历数组各个index上的Node
-            for (Node<K,V> e = tab[i]; e != null; e = e.next) {
-                if ((v = e.value) == value ||
-                    (value != null && value.equals(v)))
-                    return true;
-            }
-        }
-    }
-    return false;
-}
-```
-
-## remove(Object key)
-
-其中，查询Node的方式跟上述getNode()一致。
-
-```java
-public V remove(Object key) {
-    Node<K,V> e;
-    return (e = removeNode(hash(key), key, null, false, true)) == null ?
-        null : e.value;
-}
-
-/**
-* 删除key对应的节点，并返回该Node
-* @param hash key的哈希值
-* @param key key
-* @param value 如果matchValue为true，则比较value，否则忽略value
-* @param matchValue 如果为true，只有当value也相等时，才删除节点
-* @param movable 如果为false，在删除时，不移动其他Node，作用于红黑树节点删除
-* @return 返回删除的Node，如果未删除，返回null
-*/
-final Node<K,V> removeNode(int hash, Object key, Object value, boolean matchValue, boolean movable) {
-    Node<K,V>[] tab; Node<K,V> p; int n, index;
-    if ((tab = table) != null && (n = tab.length) > 0 &&
-        (p = tab[index = (n - 1) & hash]) != null) {
-        //与getNode(int hash, Object key)一致，获取key对应的Node
-        Node<K,V> node = null, e; K k; V v;
-        if (p.hash == hash &&
-            ((k = p.key) == key || (key != null && key.equals(k))))
-            node = p;
-        else if ((e = p.next) != null) {
-            if (p instanceof TreeNode)
-                node = ((TreeNode<K,V>)p).getTreeNode(hash, key);
-            else {
-                do {
-                    if (e.hash == hash &&
-                        ((k = e.key) == key ||
-                         (key != null && key.equals(k)))) {
-                        node = e;
-                        break;
-                    }
-                    p = e;
-                } while ((e = e.next) != null);
-            }
-        }
-        //判断是否能删除Node
-        if (node != null && (!matchValue || (v = node.value) == value ||
-                             (value != null && value.equals(v)))) {
-            if (node instanceof TreeNode)
-                //红黑树节点删除
-                ((TreeNode<K,V>)node).removeTreeNode(this, tab, movable);
-            else if (node == p)
-                //node为链表首节点时，将tab[index]指向node的后继节点
-                tab[index] = node.next;
-            else
-                //node非链表首节点时，删除node节点
-                p.next = node.next;
-            ++modCount;
-            --size;
-            afterNodeRemoval(node);
-            return node;
-        }
-    }
-    return null;
-}
-```
-
-## remove(Object key, Object value)
-
-```java
-public boolean remove(Object key, Object value) {
-    return removeNode(hash(key), key, value, true, true) != null;
-}
-```
-
-
-## 线程安全
+#### 4.5 线程安全
 
 HashMap是线程不安全的，推荐使用线程安全的ConcurrentHashMap。JDK1.8之前，HashMap在多线程时可能造成死循环，导致cpu使用率飙升到100%，并且有可能会丢失数据。JDk1.8之后，不会再造成死循环，但无法规避数据丢失的可能。
 
-#### 死循环原因
+之所以在put()中讲述HashMap的线程安全问题，是因为**环链（JDK1.7）和数据丢失**就发生在put操作时的扩容、数据转移过程中。
 
-先来看一下JDK1.7中的HashMap，在多线程时为什么会造成死循环。
+先来看一下**JDK1.7**中的HashMap，在**多线程**时为什么会造成死循环。
 
 示例：map初始化长度为2，loadFactor=1，threshold=2*1=2。即put第3个key时，map会resize。
 
@@ -909,10 +778,153 @@ e = next = 1-A
 Exception in thread "Thread2" java.lang.OutOfMemoryError: Java heap space
 ```
 
-JDK1.8中的HashMap在扩容时，不是使用JDK1.7的这种重组链表的方式，而是通过维护两个链表指针loHead、loTail、hiHead、hiTail，只是将元素添加到两个链表的尾部，并不需要头部链接（**平移代替头插法**），所以即使是多线程场景，也不会产生环链。但是由于table是成员变量，由Thread1和Thread2共享，所以在Thread1调度回来重组链表的时候，仍会覆盖Thread2写的数据，即HashMap是线程不安全的。
+JDK1.8中的HashMap在扩容时，不是使用JDK1.7的这种重组链表的方式，而是通过维护两个链表指针loHead、loTail、hiHead、hiTail，只是将元素添加到链表的尾部，并不需要头部链接（**平移代替头插法**），所以即使是多线程场景，也不会产生环链。但是由于table是成员变量，由Thread1和Thread2共享，所以在Thread1调度回来重组链表的时候，仍会覆盖Thread2写的数据，即HashMap是线程不安全的。
+
+**总结：多线程下，环链（JDK1.7）是因为rehash后的头插法；数据丢失是因为table是成员变量。**
 
 
-## 遍历
+## 5.其他常用方法
+
+#### 5.1 get(Object key)
+
+```java
+public V get(Object key) {
+    Node<K,V> e;
+    return (e = getNode(hash(key), key)) == null ? null : e.value;
+}
+
+final Node<K,V> getNode(int hash, Object key) {
+    Node<K,V>[] tab; Node<K,V> first, e; int n; K k;
+    //获取key所在数组索引上的第一个元素first
+    if ((tab = table) != null && (n = tab.length) > 0 &&
+        (first = tab[(n - 1) & hash]) != null) {
+        if (first.hash == hash && //比较第一个元素first与key是否相等
+            ((k = first.key) == key || (key != null && key.equals(k))))
+            return first;
+        //第一个元素不相等，遍历first的后继元素
+        if ((e = first.next) != null) {
+            //如果是红黑树，则取遍历红黑树，获取与key相等的TreeNode节点
+            if (first instanceof TreeNode)
+                return ((TreeNode<K,V>)first).getTreeNode(hash, key);
+            do {
+                //遍历链表，获取与key相等的Node节点
+                if (e.hash == hash &&
+                    ((k = e.key) == key || (key != null && key.equals(k))))
+                    return e;
+            } while ((e = e.next) != null);
+        }
+    }
+    return null;
+}
+```
+
+#### 5.2 containsKey(Object key)
+
+map中是否包含key。getNode如上。
+
+```java
+public boolean containsKey(Object key) {
+    return getNode(hash(key), key) != null;
+}
+```
+
+#### 5.3 containsValue(Object value)
+
+双重遍历，效率较低
+
+```java
+public boolean containsValue(Object value) {
+    Node<K,V>[] tab; V v;
+    if ((tab = table) != null && size > 0) {
+        //遍历数组
+        for (int i = 0; i < tab.length; ++i) {
+            //遍历数组各个index上的Node
+            for (Node<K,V> e = tab[i]; e != null; e = e.next) {
+                if ((v = e.value) == value ||
+                    (value != null && value.equals(v)))
+                    return true;
+            }
+        }
+    }
+    return false;
+}
+```
+
+#### 5.4 remove(Object key)
+
+其中，查询Node的方式跟上述getNode()一致。
+
+```java
+public V remove(Object key) {
+    Node<K,V> e;
+    return (e = removeNode(hash(key), key, null, false, true)) == null ?
+        null : e.value;
+}
+
+/**
+* 删除key对应的节点，并返回该Node
+* @param hash key的哈希值
+* @param key key
+* @param value 如果matchValue为true，则比较value，否则忽略value
+* @param matchValue 如果为true，只有当value也相等时，才删除节点
+* @param movable 如果为false，在删除时，不移动其他Node，作用于红黑树节点删除
+* @return 返回删除的Node，如果未删除，返回null
+*/
+final Node<K,V> removeNode(int hash, Object key, Object value, boolean matchValue, boolean movable) {
+    Node<K,V>[] tab; Node<K,V> p; int n, index;
+    if ((tab = table) != null && (n = tab.length) > 0 &&
+        (p = tab[index = (n - 1) & hash]) != null) {
+        //与getNode(int hash, Object key)一致，获取key对应的Node
+        Node<K,V> node = null, e; K k; V v;
+        if (p.hash == hash &&
+            ((k = p.key) == key || (key != null && key.equals(k))))
+            node = p;
+        else if ((e = p.next) != null) {
+            if (p instanceof TreeNode)
+                node = ((TreeNode<K,V>)p).getTreeNode(hash, key);
+            else {
+                do {
+                    if (e.hash == hash &&
+                        ((k = e.key) == key ||
+                         (key != null && key.equals(k)))) {
+                        node = e;
+                        break;
+                    }
+                    p = e;
+                } while ((e = e.next) != null);
+            }
+        }
+        //判断是否能删除Node
+        if (node != null && (!matchValue || (v = node.value) == value ||
+                             (value != null && value.equals(v)))) {
+            if (node instanceof TreeNode)
+                //红黑树节点删除
+                ((TreeNode<K,V>)node).removeTreeNode(this, tab, movable);
+            else if (node == p)
+                //node为链表首节点时，将tab[index]指向node的后继节点
+                tab[index] = node.next;
+            else
+                //node非链表首节点时，删除node节点
+                p.next = node.next;
+            ++modCount;
+            --size;
+            afterNodeRemoval(node);
+            return node;
+        }
+    }
+    return null;
+}
+```
+
+#### 5.5 remove(Object key, Object value)
+
+```java
+public boolean remove(Object key, Object value) {
+    return removeNode(hash(key), key, value, true, true) != null;
+}
+```
+
+## 6.遍历
 
 ```java
 HashMap<String,Object> map = new HashMap<>(8);
@@ -920,7 +932,7 @@ map.put("1", "A");
 map.put("2", "B");
 ```
 
-#### 通过键集合
+#### 6.1 通过键集合
 
 可以使用Iterator和foreach
 
@@ -939,7 +951,7 @@ for (String key : map.keySet()) {
 }
 ```
 
-#### 通过键值对集合
+#### 6.2 通过键值对集合
 
 也可以使用Iterator和foreach两种形式，推荐语法糖更优雅
 
@@ -958,7 +970,7 @@ for (Map.Entry<String,Object> entry : map.entrySet()) {
 }
 ```
 
-## 键唯一
+## 7.键唯一
 
 HashMap的键唯一是通过如下比较实现的：
 
@@ -968,18 +980,20 @@ if (p.hash == hash && ((k = p.key) == key || (key != null && key.equals(k))))
 
 上述比较依赖两个方法：**先比较hash值，hash值相同时再比较equals**。
 
-> **hash值不同，key肯定不同，但hash值相同，key也不一定是相同，还需要具体比较equals**。hash值比较的是两个int值，效率比两个对象直接equals更高。所以先使用hash值过滤大部分情况，降低equals()的使用次数。基本数据类型的包装类、String等都重写了这两个方法。
+> **hash值不同，key肯定不同，但hash值相同，key也不一定是相同，还需要具体比较equals**。
 
-#### hashCode()
+hash值比较的是两个int值，效率比两个对象直接equals更高。所以先使用hash值过滤大部分情况，降低equals()的使用次数。基本数据类型的包装类、String等都重写了这两个方法。
 
-> 如《确定数组索引》小节所述，通过(h = key.hashCode()) ^ (h >>> 16)计算hash值，再和n-1进行位于取模。如果key.hashCode()相同，那么高位运算得到的hash值也总是相同的，即hash冲突。**所以key类中需要重写hashCode()，好的hash算法首先会规避很多碰撞**。
+#### 7.1 hashCode()
+
+> 如《确定数组索引》小节所述，通过(h = key.hashCode()) ^ (h >>> 16)计算hash值，再和n-1进行位于取模。如果key.hashCode()相同，那么高位运算得到的hash值也总是相同的，即hash冲突。**所以key类中需要重写hashCode()，好的hash算法首先会规避掉很多碰撞**。
 
 重写hashCode()的原则：
 - 1.属相相同的对象，给出的哈希值必须相同
 - 2.属相不同的对象，给出的哈希值尽量不同
 
 
-#### equals()
+#### 7.2 equals()
 
 hash碰撞，并不一定表示key相同。所以在putVal()中又调用了key.equals()。**在hash值相同的时候，进一步判断key是否真的相同。所以key类中需要重写equals()**。
 
@@ -987,7 +1001,7 @@ hash碰撞，并不一定表示key相同。所以在putVal()中又调用了key.e
 - 1.属相相同的对象，返回true
 - 2.属相不同的对象，返回false
 
-#### Object中的hashCode和equals
+#### 7.3 Object中的hashCode和equals
 
 - hashCode()返回对象地址的int值
 - equals()其实就是==，比较地址值
@@ -1006,7 +1020,7 @@ public class Object {
 
 > A native method is a Java method whose implementation is provided by non-java code.
 
-#### 示例
+#### 7.4 示例
 
 这里使用编辑器提供的模板重写
 
