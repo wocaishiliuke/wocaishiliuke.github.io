@@ -15,7 +15,8 @@ tags:
 - [X] I.Map
 - [X] II.HashMap
 - [X] III.LinkedHashMap
-- [X] IV.参考
+- [X] IV.TreeMap
+- [X] V.参考
 
 
 ---
@@ -1081,3 +1082,442 @@ public static int hashCode(Object a[]) {
 - b.**31可以被JVM优化**
 　
 31 * i = (i << 5) - i，JVM可以使用位运算更高效的计算。
+
+
+---
+
+# III.LinkedHashMap
+
+![avatar](https://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/JavaSE/collection/LinkedHashMap.png)
+
+LinkedHashMap是HashMap的子类。继承了HashMap的所有特性，另外，**LinkedHashMap能保证元素顺序一致**
+
+> LinkedHashMap中存在2个链表：
+> - 单向链表：next指针，维护Map节点
+> - 双向链表：before和after指针，维护节点的遍历顺序
+
+## 顺序一致
+
+和HashMap相比，LinkedHashMap增强了保持顺序的特点。为此，LinkedHashMap做了以下增强：
+
+- 1.节点Entry增强为双向（双向链表，前驱、后继）
+- 2.具体实现了HashMap中维持顺序的钩子方法
+
+> 下面几个钩子方法在HashMap中没有具体实现，而在LinkedHashMap中重写了这些维持顺序的相关操作。
+
+```java
+// Callbacks to allow LinkedHashMap post-actions
+void afterNodeAccess(Node<K,V> p) { }
+void afterNodeInsertion(boolean evict) { }
+void afterNodeRemoval(Node<K,V> p) { }
+```
+
+**LinkedHashMap支持2种顺序一致：存取顺序（insertion-order）、访问顺序（access-order）**。
+
+#### 存取顺序
+
+先插入的在前，后插入的在后，修改操作不改变顺序。
+
+```java
+Map<String,Object> map = new LinkedHashMap();
+map.put("1",1);
+map.put("2",2);
+map.put("3",3);
+map.put("4",4);
+map.put("2",22);
+map.remove("3");
+for (Map.Entry<String,Object> entry: map.entrySet()) {
+    System.out.println(entry.getKey() + "--->" + entry.getValue());
+}
+
+//输出
+1--->1
+2--->22
+4--->4
+```
+
+使用场景：
+
+LinkedHashMap默认就是存取顺序一致（空参构造），常用来处理需要存取一致的数据。比如从DB查询order by的数据，可以在内存中使用LinkedHashMap接收。
+
+#### 访问顺序
+
+通过设置accessOrder成员变量来开启。
+
+```java
+Map<String,Object> map = new LinkedHashMap(16, 0.75f, true);
+map.put("1",1);
+map.put("2",2);
+map.put("3",3);
+map.put("4",4);
+//被访问的元素，会被移动到内部双向链表末尾
+map.get("2");       //1 -> 3 -> 4 -> 2
+map.put("1", "11"); //3 -> 4 -> 2 -> 1
+map.put("5", "5");  //3 -> 4 -> 2 -> 1 -> 5
+
+for (Map.Entry<String,Object> entry: map.entrySet()) {
+    System.out.println(entry.getKey() + "--->" + entry.getValue());
+}
+
+//输出
+3--->3
+4--->4
+2--->2
+1--->11
+5--->5
+```
+
+使用场景：通过LinkedHashMap的访问有序，实现LRU(Least Recently Used，最近最少使用)算法。如缓存
+
+
+> 凡是位于速度相差较大的两种硬件之间，用于协调两者数据传输速度差异的结构，均可称之为Cache**。
+> 主存容量远大于CPU缓存，磁盘容量远大于磁盘缓存，因此无论是哪一层次的缓存都面临一个同样的问题：当缓存空间用完后，如何挑选要舍弃的内容，为新缓存的内容腾出空间。解决这个问题的算法有几种，如最久未使用算法（LFU）、先进先出算法（FIFO）、最近最少使用算法（LRU）、非最近使用算法（NMRU）等。这些算法在不同层次的缓存上执行时拥有不同的效率和代价，需根据具体场合选择最合适的一种。而本文讲的LinkedHashMap的按访问有序，就可以很容易的实现LRU算法。
+
+```java
+public class LRUCache<K,V> extends LinkedHashMap<K,V> {
+
+    private int maxSize;
+
+    public LRUCache(int maxSize) {
+        super(16,0.75f, true);//开启访问顺序
+        this.maxSize = maxSize;
+    }
+
+    //重写LinkedHashMap中的removeEldestEntry()
+    @Override
+    protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {
+        return this.size() > maxSize;
+    }
+}
+```
+
+```java
+// 测试
+public void test() {
+    LRUCache<String,Object> cache = new LRUCache(3);
+    cache.put("1",1);
+    cache.put("2",2);
+    cache.put("3",3);
+
+    //被访问的元素，会被移动到内部双向链表末尾
+    cache.get("2");       //1 -> 3 -> 2
+    cache.put("4", 4);    //[1] -> 3 -> 2 -> 4，1会被删除
+
+    for (Map.Entry<String,Object> entry: cache.entrySet()) {
+        System.out.println(entry.getKey() + "--->" + entry.getValue());
+    }
+}
+// 结果
+3--->3
+2--->2
+4--->4
+```
+
+其中removeEldestEntry是LinkedHashMap特有的方法。该方法用于插入键值对后afterNodeInsertion()调用，如果返回true，则会清除“最老”(最久未访问)的键值对。LinkedHashMap中该方法总是返回false，即插入后永远不会清除元素。所以要实现LRU，需要重写此方法。
+
+```java
+// LinkedHashMap
+protected boolean removeEldestEntry(Map.Entry<K,V> eldest) {
+    return false;
+}
+```
+
+## 构造
+
+构造都是调用HashMap的对应构造，通过accessOrder切换存取顺序、访问顺序。
+
+```java
+public LinkedHashMap() {
+    super();
+    accessOrder = false;
+}
+
+public LinkedHashMap(int initialCapacity) {
+    super(initialCapacity);
+    accessOrder = false;
+}
+
+public LinkedHashMap(int initialCapacity, float loadFactor) {
+    super(initialCapacity, loadFactor);
+    accessOrder = false;
+}
+
+// 该构造是唯一一个能够指定使用access-order的构造函数
+public LinkedHashMap(int initialCapacity, float loadFactor, boolean accessOrder) {
+    super(initialCapacity, loadFactor);
+    this.accessOrder = accessOrder;
+}
+
+//putMapEntries()的第二个参数控制着afterNodeInsertion()后是否进行检查，来清除最老元素
+//这里遵循insertion-order，所以插入后永不删除，直接赋值false
+public LinkedHashMap(Map<? extends K, ? extends V> m) {
+    super();
+    accessOrder = false;
+    putMapEntries(m, false);
+}
+```
+
+## 成员变量
+
+其他均继承自HashMap。
+
+```java
+//双向节点（键值对），继承自HashMap.Node
+static class Entry<K,V> extends HashMap.Node<K,V> {
+    Entry<K,V> before, after;
+    Entry(int hash, K key, V value, Node<K,V> next) {
+        super(hash, key, value, next);
+    }
+}
+
+// The head (eldest) of the doubly linked list
+transient LinkedHashMap.Entry<K,V> head;
+
+//The tail (youngest) of the doubly linked list
+transient LinkedHashMap.Entry<K,V> tail;
+
+//The iteration order：true for access-order,false for insertion-order
+final boolean accessOrder;
+```
+
+相比于HashMap的Node，LinkedHashMap的Entry除了有next指针(继承自HashMap.Node)外，还有指向前驱、后继的before、after指针。LinkedHashMap是通过【数组+链表/红黑树+双向链表】实现的。
+
+示例：某LinkedHashMap数组table的size=4，loadFactor=1，依次put四个元素（5、1、9、3为key）。假设index是简单的通过key.hashCode()取模mod数组长度来确定，则LinkedHashMap的内部结构大致为：
+
+![avatar](https://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/JavaSE/collection/LinkedHashMap1.jpg)
+
+LinkedHashMap = HashMap + before&after双向链。当LinkedHashMap改变时，双向链表结构也会改变，保证head始终指向“最老”节点，tail始终指向“最新”节点。当然最老和最新节点的确定跟保持顺序的2种方式有关。
+
+## 常用方法
+
+#### put()
+
+LinkedHashMap的put()和putAll()完全继承自HashMap。那么
+
+- 问题1：如何实现插入的是LinkedHashMap.Entry而非HashMap.Node
+- 问题2：如何实现双向链表排序
+
+> put()和putAll()主要通过putVal()来实现，所以这里分析putVal()的逻辑即可。
+
+问题1：在HashMap的putVal()中，通过调用newNode()，构建一个待插入的Node对象，而LinkedHashMap重写了newNode()，所以这里会调用自己的newNode()，构建一个待插入的LinkedHashMap.Entry对象。（实际就是继承+方法重写）
+
+问题2：在LinkedHashMap.newNode()中，调用了linkNodeLast()来维持双向链表。即新节点在创建后、插入前，会链到双向链表的尾部。源码如下：
+
+> put()、putVal()可参考上述HashMap，在其中调用了newNode()
+
+```java
+//LinkedHashMap.newNode()
+Node<K,V> newNode(int hash, K key, V value, Node<K,V> e) {
+    //创建Entry节点
+    LinkedHashMap.Entry<K,V> p = new LinkedHashMap.Entry<K,V>(hash, key, value, e);
+    //维护双向链表结构，将新节点p插到双向链表尾部
+    linkNodeLast(p);
+    return p;
+}
+
+private void linkNodeLast(LinkedHashMap.Entry<K,V> p) {
+    LinkedHashMap.Entry<K,V> last = tail;
+    //tail指针移到p节点
+    tail = p;
+    //如果插入p节点之前链表为null，则将head指针也指向新插入的节点p
+    if (last == null)
+        head = p;
+    else {
+        //将新插入的节点p插入到双向链表尾部
+        p.before = last;
+        last.after = p;
+    }
+}
+```
+
+![avatar](https://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/JavaSE/collection/LinkedHashMap_put_insert.jpg)
+
+在putVal()中，调用了上述提到的2个钩子方法：afterNodeAccess()、afterNodeInsertion()。在HashMap中它们是空方法，在LinkedHashMap有具体的实现：
+
+- afterNodeAccess：当按访问顺序时，维护双向链表结构，将最新访问的节点移到双向链表的尾部
+- afterNodeInsertion：插入节点后，检查是否需要清除最老节点（LRU）。默认永不删除（因为removeEldestEntry返回false），如果需要清除最老节点，可以参考上述LRU示例：LRUCache
+
+###### afterNodeAccess
+
+```java
+void afterNodeAccess(Node<K,V> e) { // move node to last
+    LinkedHashMap.Entry<K,V> last;
+    //开启了access-order && e不是双向链表的last，则调整双向链表
+    if (accessOrder && (last = tail) != e) {
+        //p：刚被访问的节点，a：后继节点，b：前驱节点
+        LinkedHashMap.Entry<K,V> p =
+            (LinkedHashMap.Entry<K,V>)e, b = p.before, a = p.after;
+        p.after = null;
+        if (b == null)
+            head = a;
+        else
+            b.after = a;
+        if (a != null)
+            a.before = b;
+        else
+            last = b;
+        if (last == null)
+            head = p;
+        else {
+            p.before = last;
+            last.after = p;
+        }
+        tail = p;
+        ++modCount;
+    }
+}
+```
+
+![avatar](https://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/JavaSE/collection/LinkedHashMap_put_access.jpg)
+
+除了HashMap.put()中调用外，afterNodeAccess()在replace()、merge()、compute()中也有调用。保证access-order时，最后被访问的节点会被移到双向链表尾部。（insertion-order时，该方法不做任何操作）
+
+###### afterNodeInsertion
+
+插入后，是否删除head节点（双向链表的头结点）
+
+> 一般put时，前两个都为true，大部分时候只取决于removeEldestEntry()，所以上述实现LRU时需要重写removeEldestEntry()。但构造LinkedHashMap(Map m)在插入时，evict为false，即构造初始化插入时不删除。
+
+```java
+void afterNodeInsertion(boolean evict) { // possibly remove eldest
+    LinkedHashMap.Entry<K,V> first;
+    //evit为ture && 双向链表不为null && removeEldestEntry()返回true时，清除最老节点
+    if (evict && (first = head) != null && removeEldestEntry(first)) {
+        K key = first.key;
+        removeNode(hash(key), key, null, false, true);
+    }
+}
+```
+
+> removeEldestEntry只在这里被使用，即插入后判断是否删除最老元素。
+
+#### remove(Object key)
+
+LinkedHashMap也没有重写remove()，完全使用继承的HashMap.remove()。和put操作一样，remove操作在单向链表中删除节点后，也是通过钩子方法，完成在双向链表中该节点的删除。
+
+！[avatar](https://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/JavaSE/collection/LinkedHashMap_remove.jpg)
+
+> HashMap的remove()和removeNode()，详见上述，这里不再赘述。
+
+```java
+public V remove(Object key) {
+    Node<K,V> e;
+    return (e = removeNode(hash(key), key, null, false, true)) == null ?
+        null : e.value;
+}
+
+final Node<K,V> removeNode(int hash, Object key, Object value, boolean matchValue, boolean movable) {
+    Node<K,V>[] tab; Node<K,V> p; int n, index;
+    if ((tab = table) != null && (n = tab.length) > 0 &&
+        (p = tab[index = (n - 1) & hash]) != null) {
+        //与getNode(int hash, Object key)一致，获取key对应的Node
+        ...
+        //判断是否能删除Node
+        if (node != null && (!matchValue || (v = node.value) == value ||
+                             (value != null && value.equals(v)))) {
+            //红黑树/链表节点删除
+            ...
+            afterNodeRemoval(node);
+            return node;
+        }
+    }
+    return null;
+}
+```
+
+> LinkedHashMap重写的afterNodeRemoval()，删除双向链表中的该节点
+
+```java
+//LinkedHashMap删除节点后，将节点也从双向链表中移除
+void afterNodeRemoval(Node<K,V> e) {
+    //删除的节点p，b是p的前驱节点，a是p的后继节点
+    LinkedHashMap.Entry<K,V> p =
+        (LinkedHashMap.Entry<K,V>)e, b = p.before, a = p.after;
+    //清空p的前驱和后继
+    p.before = p.after = null;
+    //处理p的前驱
+    if (b == null)
+        head = a;
+    else
+        b.after = a;
+    //处理p的后驱
+    if (a == null)
+        tail = b;
+    else
+        a.before = b;
+}
+```
+
+#### get(Object key)
+
+LinkedHashMap重写了HashMap.get()。只是增加了一个判断：如果LinkedHashMap是按访问有序，则在get访问后调用afterNodeAccess()，调整双向链表结构。
+
+```java
+public V get(Object key) {
+    Node<K,V> e;
+    //调用HashMap.getNode()，获取key对应的Node
+    if ((e = getNode(hash(key), key)) == null)
+        return null;
+    //维护双向链表：如果LinkedHashMap按访问有序，则将刚访问的节点e，移到双向链表的尾部
+    if (accessOrder)
+        afterNodeAccess(e);
+    return e.value;
+}
+```
+
+同样，getOrDefault()的实现是一样的：
+
+```java
+public V getOrDefault(Object key, V defaultValue) {
+   Node<K,V> e;
+   if ((e = getNode(hash(key), key)) == null)
+       return defaultValue;
+   if (accessOrder)
+       afterNodeAccess(e);
+   return e.value;
+}
+```
+
+#### containsKey(Object key)
+
+LinkedHashMap没有重写HashMap.containsKey()，完全复用。因为判断key是否存在，不涉及双向链表的维护，且HashMap.containsKey()的时间复杂度为O(1)，效率较高，没必要重写。
+
+#### containsValue(Object value)
+
+虽然containsValue()不需要维护双向链表，LinkedHashMap还是重写了containsValue()，是因为HashMap.containsValue()效率太低。LinkedHashMap内部额外维护了一个双向链表，直接遍历双向链表即可访问HashMap的所有节点，依次判断即可，时间复杂度为O(n)。
+
+> HashMap.containsValue()会遍历hash数组+遍历链表/红黑树，使用两层for循环来比较value，时间复杂度O(n)-O(n^2)，详见上述。
+
+```java
+public boolean containsValue(Object value) {
+    //遍历双向链表，判断value是否存在
+    for (LinkedHashMap.Entry<K,V> e = head; e != null; e = e.after) {
+        V v = e.value;
+        if (v == value || (value != null && value.equals(v)))
+            return true;
+    }
+    return false;
+}
+```
+
+#### 总结
+
+**对比HashMap可以发现，LinkedHashMap其实就是比HashMap多了access-order，即双向链表和维护双向链表的逻辑。双向链表的维护是通过【linkNodeLast()+钩子方法实现的】**。
+
+put()插入时，首先在newNode()时，就通过linkNodeLast()（非钩子方法，LinkedHashMap特有）将新Entry维护到双向链表的表尾。然后通过钩子方法afterNodeAccess()，完成在访问顺序时的双向链表的维护（不管是访问有序还是插入有序，此时都要维护），以及通过钩子方法afterNodeInsertion()，判断是否删除最老节点。
+
+remove()删除时，在单向链表中删除节点后，通过钩子方法afterNodeRemoval()，在双向链表中也删除该节点。
+
+get()访问时，如果是按访问有序，通过afterNodeAccess()来调整双向链表结构，否则按插入有序则不变。
+
+
+---
+
+# IV.TreeMap
+
+
+
+
+---
+
+# V.参考
