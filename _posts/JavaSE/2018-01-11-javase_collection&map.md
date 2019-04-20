@@ -7,7 +7,7 @@ tags:
     - JavaSE
 ---
 
-本文记录Java集合：单列集合Collection和双列集合Map两个体系的相关成员。
+本文记录Java集合：单列集合Collection、双列集合Map。
 
 <!-- more -->
 
@@ -22,13 +22,19 @@ tags:
 
 # I.概述
 
-Java中的[集合](https://docs.oracle.com/javase/8/docs/technotes/guides/collections/overview.html)，基本可以分为两类：单列集合Collection、k-v双列集合Map。
+Java中的[集合](https://docs.oracle.com/javase/8/docs/technotes/guides/collections/overview.html)，基本可分为：单列集合Collection、k-v双列集合Map。
 
 ![avatar](http://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/JavaSE/collection/java-collections-framework.png)
 
-Collection和Map体系的设计，采用了经典的接口(interfaces)与实现(implementations)分离的思想，具体实现类都会实现一个或多个接口。另外，在接口和具体实现类之间，大多还使用了抽象类，在抽象类中做了一些通用的实现，是为了更方便的实现接口。以队列（queue）为例： 
+Collection和Map体系的设计，采用了经典的接口（interfaces）与实现（implementations）分离的思想，实现类都会实现一个或多个接口。另外，在接口和实现类之间，大多还使用了抽象类，在抽象类中做一些通用的实现，更方便实现接口。
 
-> **队列是种FIFO的数据结构，入队在队尾，出队在队头**。Queue接口中只定义了队列的通用方法，没有说明队列的具体实现方式。这里以add()和remove()为例
+## 1.示例
+
+下面以队列（queue）为例，阐述集合体系中的【接口-抽象-实现】设计思想。
+
+> **队列是种FIFO数据结构，队尾入队，队头出队。队列通常有两种实现方式：循环数组、链表**。
+
+Queue接口只定义了队列的通用方法，没有体现具体的实现方式。以add()和remove()为例
 
 ```java
 public interface Queue<E> extends Collection<E> {
@@ -38,7 +44,7 @@ public interface Queue<E> extends Collection<E> {
 }
 ```
 
-> **队列通常有两种实现方式：循环数组和链表**。Java提供了对应实现：ArrayDequeue<E>和LinkedList<E>。一般情况下，循环数组队列比链表队列效率高，但是循环数组是个有界集合，容量有限。如果程序中要收集的对象没有上限，需要使用链表队列。
+Java中也提供了基于循环数组、链表的实现：ArrayDequeue<E>、LinkedList<E>。
 
 ```java
 public class ArrayDeque<E> extends AbstractCollection<E> implements Deque<E>, Cloneable, Serializable {
@@ -52,7 +58,6 @@ public class ArrayDeque<E> extends AbstractCollection<E> implements Deque<E>, Cl
     ...
 }
 ```
-
 ```java
 public class LinkedList<E> extends AbstractSequentialList<E> implements List<E>, Deque<E>, Cloneable, java.io.Serializable {
 
@@ -66,10 +71,11 @@ public class LinkedList<E> extends AbstractSequentialList<E> implements List<E>,
 }
 ```
 
-## 扩展
+一般情况下，循环数组队列比链表队列效率高。但是循环数组容量有限，如果要收集的对象没有上限，可使用链表队列。
+
+## 2.扩展
 
 稍微扩展下数据结构和数据存储结构，方便后面内容的理解。
-
 - 数据结构：队列、栈
 - 数据存储结构：数组、链表
 
@@ -91,25 +97,28 @@ public class LinkedList<E> extends AbstractSequentialList<E> implements List<E>,
 
 
 ---
-
 # II.Collection
 
-数组长度是固定的，不够灵活。Java提供了可以存储任意对象、长度可变的集合（可变容器）。
+数组长度是固定的，不够灵活。所以Java提供了可以存储任意对象、长度可变的集合（可变容器）。
 
 ![avatar](http://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/JavaSE/collection/collection-system.png)
 
-> **和数组的区别**
+## 1.Collection和数组
 
-- 1.数组固定长度；集合长度可变
-- 2.数组可以存储基本数据类型和引用数据类型；**集合只能存储引用数据类型**（自动装箱）
+> 和数组的区别
+
+- 数组固定长度；集合长度可变
+- 数组可以存储基本数据类型和引用数据类型；**集合只能存储引用数据类型**（自动装箱）
 
 当元素个数固定，可使用数组，节省内存；否则使用集合，更灵活。
 
-> 集合中部分子类是基于数组实现的，如ArrayList，初始长度（第一次add时）10，超出时扩容1.5倍
+> 和数组的联系
 
-## 1.概述
+集合中部分子类是基于数组实现的，如ArrayList，初始长度（第一次add时）10，超出时扩容1.5倍
 
-所有集合类都直接或间接实现了Collection接口，接口中定义了集合的一些通用方法。包括了集合操作元素、集合操作集合等方法。
+## 2.概述
+
+所有单列集合都直接或间接地实现了Collection接口。接口中定义了一些通用方法，包括操作元素、操作集合等方法。
 
 ```java
 public interface Collection<E> extends Iterable<E> {
@@ -180,7 +189,7 @@ public interface Collection<E> extends Iterable<E> {
 }
 ```
 
-## 2.AbstractCollection
+## 3.AbstractCollection
 
 Java集合框架中，一个接口往往会对应一个抽象类，实现接口中的一些通用方法。Collection接口也有AbstractCollection抽象类，提供基于迭代器Iterator的contains、remove、toString等一些方法的实现，方便实现类更轻松地实现Collection接口。
 
@@ -250,11 +259,13 @@ public interface Iterator<E> {
 }
 ```
 
-迭代器用于集合的遍历，但实现类的数据结构不同。Iterator就将hasNext和next等方法抽象到接口层，由实现类自定义这两个方法的具体实现，如ArrayList的内部类Itr。这样使用Iterator进行遍历时，风格统一。
+迭代器用于集合的遍历，但由于实现类的数据结构不同，Iterator就将hasNext和next等方法抽象到接口层，由实现类自定义这两个方法的具体实现。如ArrayList的内部类Itr和ListItr。这样使用Iterator进行遍历时，风格统一。
 
 #### 3.1 迭代器遍历
 
-反复调用next()，可以逐个访问元素。到达集合末尾时，next()将抛出noSuchElementException异常。因此在调用next()前,需要调用hasNext()，判断是否存在下一个元素。迭代器遍历的结构大致如下：
+迭代器主要是用于遍历。
+
+通过反复调用next()，可以逐个访问元素。当到达集合末尾时，next()将抛出noSuchElementException异常。因此在调用next()前，需要调用hasNext()，判断是否存在下一个元素。
 
 ```java
 Collection<String> c = …;
@@ -266,7 +277,7 @@ while(c.hasNext()) {
 }
 ```
 
-Java 5提供了一个更优雅的增强for循环语法糖：foreach。编译器会将foreach循环翻译为迭代器循环：
+Java 5提供了一个更优雅的增强for循环语法糖：foreach。编译器会将foreach翻译为迭代器循环。
 
 ```java
 for (String element : c) {
@@ -276,7 +287,7 @@ for (String element : c) {
 
 #### 3.2 迭代器删除
 
-Iterator接口的remove()用于删除上次调用next()时返回的元素，该方法在单线程下可避免并发修改异常。如：
+Iterator接口的remove()用于删除上次调用next()时返回的元素，该方法在单线程下可避免并发修改异常。
 
 ```java
 Iterator<String> iterator = c.iterator();
@@ -291,6 +302,8 @@ iterator.remove();
 iterator.remove(); //remove前未调用next方法，异常
 ```
 
+Iterator接口中没有提供add()，即普通的迭代器只能并发删除，不能并发插入。有些Iterator的实现类中提供了add()，支持并发插入，如ArrayList中的ListItr。
+
 #### 3.3 迭代器forEachRemaining
 
 forEachRemaining是Java8中新引入的default方法，方法的参数Consumer用于逐个消费集合中的元素，如下：
@@ -302,6 +315,10 @@ list.iterator().forEachRemaining(ele -> System.out.println("consume :" + ele));
 
 ## 4.Collection通用遍历
 
+即所有的Collection都可以使用的遍历方式：
+- 1.转数组遍历
+- 2.迭代器遍历：iterator、foreach
+
 ```java
 Collection<String> c = new ArrayList<>();
 c.add("a");
@@ -309,7 +326,7 @@ c.add("b");
 c.add("c");
 ```
 
-- 1.转数组遍历
+#### 4.1 转数组遍历
 
 ```java
 Object[] arr = c.toArray();
@@ -318,11 +335,11 @@ for (int i = 0; i < arr.length; i++) {
 }
 ```
 
-> 循环内如果需要调用子类String特有的方法（多态的弊端），需要向下强转(String)arr[i];
+循环内如果需要调用子类String特有的方法（多态的弊端），需要向下强转(String)arr[i];
 
-- 2.迭代器遍历
+#### 4.2 迭代器遍历
 
-包括原生迭代、JDK1.5提供的语法糖foreach
+包括迭代器、JDK1.5提供的语法糖foreach
 
 ```java
 Iterator<String> it = c.iterator();
@@ -339,7 +356,6 @@ for (String s : c) {
 
 
 ---
-
 # III.Map
 
 ## 1.概述
@@ -351,9 +367,9 @@ for (String s : c) {
 - 1.将键映射到值
 - 2.键唯一，不可重复（每个键只能映射一个值）
 
-每种Map保证键唯一的方式不同，根据它们实现的算法分为HashMap、TreeMap等
+每种Map保证键唯一的方式不同，根据它们实现唯一的方式，分为HashMap、TreeMap等
 
-> Map键唯一，Set元素唯一。Map和Collection中的单列集合Set相似。Set底层依赖Map（元素存到k，v=new Object()）。
+> Map键唯一，Set元素唯一。Set底层依赖Map（Set元素存到k位置，v=new Object()）
 
 ```java
 public interface Map<K,V> {
@@ -596,7 +612,7 @@ public interface Map<K,V> {
 
 ## 2.AbstractMap
 
-Map接口也有AbstractMap抽象类，提供一些基于Set entrySet的Iterator迭代器的containsKey、containsValue、remove等方法的实现，也是为了更容易的实现Map接口。
+Map接口也有AbstractMap抽象类，提供一些基于Iterator<Map.Entry<K,V>>迭代器的containsKey、remove等方法的实现，方便实现Map接口。
 
 ```java
 public abstract class AbstractMap<K,V> implements Map<K,V> {
@@ -623,7 +639,6 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
 
 
 ---
-
 # IV.参考
 
 - [javase collections overview](https://docs.oracle.com/javase/8/docs/technotes/guides/collections/overview.html)
