@@ -108,11 +108,21 @@ for (int i = 0; i < list.size(); i++) {
 
 **ArrayList的索引遍历比iterator遍历快，LinkedList的iterator遍历比索引遍历快。**实际使用中注意选择最佳方式。
 
-> ArrayList实现了RandomAccess，使用索引随机访问效率更高。而LinkedList的索引是隐式的（逻辑上的，物理上不连续没有偏移量），不支持随机访问，使用索引访问还要从头/尾查找，效率比iterator遍历还低。可以使用代码测试，但具体原因是跟局部性原理（CPU缓存）有关？（不确定TODO）
+> **ArrayList实现了RandomAccess接口，所以使用索引访问效率很高。而LinkedList的索引是隐式的（逻辑上的，物理上不连续没有偏移量），不支持随机访问，使用索引访问仍要从头/尾查找，效率比iterator遍历还低**。可以使用代码测试，但具体原因是跟局部性原理（CPU缓存）有关？（不确定TODO）
+
+#### RandomAccess
+
+是个标记接口。**用来标识List实现类支持快速随机访问**。
+
+```
+Marker interface used by List implementations to indicate that they support fast (generally constant time) random access
+```
+
+> constant time，算法中的概念，常数时间。比如数组的随机访问，，与数组长度无关（有些结构可能是o(length)等）
 
 ## 2.并发修改异常
 
-ConcurrentModificationException。即在遍历时，增删元素，报出的异常。使用Iterator或foreach时都会出现该异常。
+ConcurrentModificationException。遍历中，增删元素，抛出的异常。Iterator或foreach都会出现该异常。以ArrayList为例：
 
 > 增强for循环只是一个语法糖，编译后还是使用的迭代器Iterator
 
@@ -140,7 +150,14 @@ Exception in thread "main" java.util.ConcurrentModificationException
 
 #### 2.1 原因
 
-根据报错查看ArrayList$Itr源码
+根据报错，查看ArrayList$Itr源码
+
+- 循环开始时，cursor=0, lastRet=-1, expectedModCount=modCount=0
+- list.iterator()，执行从AbstractList继承的方法，返回new Itr()
+- 执行it.hasNext()，即cursor和size是否相等，判断是否到达末尾
+- 执行String s = it.next()后，cursor=1, lastRet=0, expectedModCount=modCount=0
+- if条件成立，实际执行子类ArrayList的remove，调用fastRemove()：modCount加1，arraycopy后，集合size-1，最后一个元素引用置为null，方便GC回收。此时cursor=1, lastRet=0, expectedModCount=0, modCount=1
+- 该次循环结束，执行下次循环，执行到it.next()时会checkForComodification()，由于expectedModCount!=modCount抛出异常
 
 ```java
 public class ArrayList<E> extends AbstractList<E> implements List<E>, RandomAccess, Cloneable, java.io.Serializable {
@@ -228,18 +245,13 @@ public class ArrayList<E> extends AbstractList<E> implements List<E>, RandomAcce
 }
 ```
 
-- 循环开始时，cursor=0, lastRet=-1, expectedModCount=modCount=0
-- list.iterator()，执行从AbstractList继承的方法，返回new Itr()
-- 执行it.hasNext()，即cursor和size是否相等，是否到达末尾了
-- 执行String s = it.next()后，cursor=1, lastRet=0, expectedModCount=modCount=0
-- if条件成立，实际执行子类ArrayList的remove，调用fastRemove()：modCount加1，arraycopy后，集合size-1，最后一个元素引用置为null，方便GC回收。此时cursor=1, lastRet=0, expectedModCount=0, modCount=1
-- 该次循环结束，执行下次循环，执行到it.next()时会checkForComodification()，由于expectedModCount!=modCount抛出异常
+所以原因：**ArrayList的add()和remove()中，都会modCount++，导致expectedModCount和modCount不再相等，抛出异常**。
 
 #### 2.2 解决
 
 - 1.使用迭代器Itr提供的remove()，而非list的remove
 
-> 在Itr.remove()中，有expectedModCount = modCount操作，所以不会出现并发修改异常。
+在Itr.remove()中，有expectedModCount = modCount操作，所以不会出现并发修改异常。
 
 ```java
 Iterator<String> it = list.iterator();
@@ -250,11 +262,11 @@ while (it.hasNext()){
 }
 ```
 
-> 但没有Itr.add方法，所以该方式只能解决"并发删除异常"，对于"并发增加"无计可施
+但没有Itr.add()，所以该方式只能解决"并发删除异常"，对于"并发增加"无计可施
 
 - 2.使用另一个内部类ListItr
 
-该类继承增强了Itr
+ListItr继承增强了Itr：可以**并发增加元素 && 提供双向遍历支持**。
 
 ```java
 private class ListItr extends Itr implements ListIterator<E> {
@@ -296,7 +308,7 @@ private class ListItr extends Itr implements ListIterator<E> {
 修改后代码为：
 
 ```java
-ListIterator<String> lit = list.listIterator();//多态
+ListIterator<String> lit = list.listIterator();
 while (lit.hasNext()){
     String s = lit.next();
     if ("a".equals(s)){
@@ -308,7 +320,7 @@ while (lit.hasNext()){
 
 - 3.多线程下的并发修改
 
-上面两个在单线程下可以避免并发修改异常。但在多线程下，对于共享List的并发读写出现并发修改异常的原因：**不是因为ArrayList是线程不安全的（使用Vector依然会报并发修改异常），而是因为modCount属于List，expectedModCount属于iterator（Itr）。即modCount是共享的，而每个线程都有自己的expectedModCount**。这就导致了即使使用了iterator.remove()，修改的线程没问题，但其他线程的expectedModCount可能还是0，即使modCount不是volatile的，其他线程也可能读到修改线程写回的最新值1，抛出异常。
+上面两个在单线程下可以避免并发修改异常。但在多线程下，对于共享List的并发读写出现并发修改异常的原因：**不是因为ArrayList是线程不安全的（使用Vector依然会报并发修改异常，线程安全和多线程下的并发修改异常是两个概念），而是因为modCount属于List，expectedModCount属于iterator（Itr）。即modCount是共享的，而每个线程都有自己的迭代器，自己的expectedModCount**。这就导致了即使使用了iterator.remove()，修改的线程没问题，但其他线程的expectedModCount可能还是0，即使modCount不是volatile的，其他线程也可能读到修改线程写回的最新值1，抛出异常。
 
 ```java
 List<String> list = new ArrayList<>();
@@ -359,7 +371,7 @@ Exception in thread "Thread-0" java.util.ConcurrentModificationException
 
 此时解决方式有两种：
 > - 1.iterator迭代时，使用synchronized或者Lock进行同步，阻塞其他线程
-> - 2.使用并发容器CopyOnWriteArrayList代替ArrayList和Vector
+> - 2.使用并发容器CopyOnWriteArrayList（使用了ReentrantLock）代替ArrayList和Vector
 
 #### 2.3 其他
 
@@ -380,7 +392,7 @@ while (it.hasNext()){
 System.out.println(list);
 ```
 
-执行了list.remove()后，虽然modCount自增了，但同时集合的size也减少了1。下次进行hasNext判断时，cusor=3=size，hasNext()返回false，不会进入循环体执行next()，也就不会执行checkForComodification()，即不会抛异常。
+执行了list.remove()后，虽然modCount自增了，但同时集合的size也减少了1。下次进行hasNext判断时，cusor=2=size，hasNext()返回false，不会进入循环体执行next()，也就不会执行checkForComodification()，即不会抛异常。但最后一个元素没有遍历到，可能会导致更隐蔽的BUG。所以应该避免并发修改。
 
 Java 8之后，还可以调用Collection接口的新方法removeIf()实现相同的效果：
 
@@ -390,7 +402,7 @@ list.removeIf(string -> string.equals("b"));
 
 ## 3.双向遍历
 
-上述ListItr还提供了previous()和hasPrevious()，与next()和hasNext()对应，即ListItr支持双向遍历
+上述ListItr还提供了previous()和hasPrevious()，与next()和hasNext()对应，即ArrayList支持双向遍历。
 
 ```java
 ListIterator<String> lit = list.listIterator(list.size());
@@ -409,7 +421,7 @@ ArrayList、Vector、LinkedList
 |效率|按索引查询快O(1)，增删慢O(N)|按索引查询快O(1)，增删慢O(N)|不支持随机访问；按索引查询慢（从头/尾找，O(N/2)）；两端增删快O(1)，中间增删需要先定位O(N)，但不需要移位，即修改本身快O(1)|
 |线程|线程不安全，效率高|线程安全，效率低|线程不安全，效率高|
 
-> 这里ArrayList和Vector的查询指的是，使用索引访问。两者查找元素效率比较低，未排序时，时间复杂度为O(N)，已排序时，可以通过二分查找，时间复杂度为O(logN)
+> 这里ArrayList和Vector的查询指的是，使用索引访问。两者根据值查找元素的效率比较低，未排序时，时间复杂度为O(N)，已排序时，可以通过二分查找，时间复杂度为O(logN)
 
 当容器需要大量插入删除操作时，避免使用ArrayList，可选用LinkedList。
 
@@ -420,11 +432,11 @@ ArrayList、Vector、LinkedList
 
 # II.ArrayList
 
-ArrayList是List基于数组的实现。是物理存储连续动态容器。容量不足时，会进行扩容。
+ArrayList是List基于数组的实现。**物理存储连续、动态**的容器。容量不足时，会进行扩容。
 
 ![avatar](http://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/JavaSE/collection/ArrayList.png)
 
-- 实现了RandomAccess接口，支持随机访问（因为物理存储连续），时间复杂度为O(1)
+- 实现了RandomAccess，支持随机访问（因为物理存储连续），时间复杂度为O(1)（constant time）
 - 支持序列化
 - 可以被克隆
 
@@ -440,7 +452,7 @@ private static final Object[] EMPTY_ELEMENTDATA = {};
 //默认容量的空元素数组
 private static final Object[] DEFAULTCAPACITY_EMPTY_ELEMENTDATA = {};
 
-//存放元素的集合
+//存放元素的集合（transient不被序列化）
 transient Object[] elementData; // non-private to simplify nested class access
 //集合长度
 private int size;
@@ -516,7 +528,9 @@ private void grow(int minCapacity) {
 
 即可以理解成：**通过ArrayList的默认构造函数，（第一次执行add时）内部数组的容量默认为10**
 
-> 另外扩容的逻辑也在这里grow()
+> 另外扩容的逻辑也在grow()中
+
+ArrayList可以存多个null。
 
 #### 3.2 add(int index, E element)
 
@@ -552,9 +566,9 @@ private void rangeCheckForAdd(int index) {
 
 #### 3.3 依赖equals
 
-ArrayList中的contains(Object o)和remove(Object o)，依赖equals()。
+ArrayList虽然不需要保证元素唯一，但它的contains(Object o)和remove(Object o)，依赖元素的equals()。（根据元素值进行的操作，都依赖元素的equals()）
 
-这里以去重为例：
+示例：ArrayList去重
 
 > String类重写了equals()，比较的是字符串本身，而非地址值
 
@@ -597,8 +611,7 @@ public class User {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         User user = (User) o;
-        return age == user.age &&
-                Objects.equals(name, user.name);
+        return age == user.age && Objects.equals(name, user.name);
     }
 }
 ```
@@ -622,22 +635,21 @@ System.out.println(newList);
 
 
 ---
-
 # III.LinkedList
 
 LinkedList是List基于双向链表的实现。LinkedList中的每个元素是链表的一个节点。元素逻辑上连续，物理存储上不连续。不支持RandomAccess。
 
-> 双向链表的节点包括可前驱和后继引用（指针），单向链表的节点只有后继。
+> 双向链表的节点包括前驱、后继引用（指针），单向链表的节点只有后继。
 
 ![avatar](http://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/JavaSE/collection/LinkedList.png)
 
-> 抽象类AbstractSequentialList跟ArrayList继承的AbstractList作用相同，也是为了实现接口分离，实现一些通用方法，方便扩展。
+> AbstractSequentialList跟AbstractList作用相同，它更进一步地实现了一些方法，方便扩展。
 
-另外，LinkedList实现了Deque接口（Double Ended Queues），即可以操作双端队列。（链表本身可以实现队列和栈，所以LinkedList可用作栈、队列、双向队列）
+如上篇所述，LinkedList实现了Deque接口（Double Ended Queues），即可以操作双端队列。（链表本身可以实现队列和栈，所以LinkedList可用作栈、队列、双向队列）
 
 ## 1.内部实现
 
-LinkedList使用内部类Node，表示每一个元素节点。每个节点包括元素item、前驱prev和后继next
+**LinkedList使用内部类Node，表示元素节点。每个Node包括元素item、前驱prev和后继next**
 
 ```java
 private static class Node<E> {
@@ -681,11 +693,11 @@ public LinkedList(Collection<? extends E> c) {
 
 ## 4.基本方法
 
-下面使用索引index的方法，都会依赖Node<E> node(int index)方法。即先查找节点，再进行其他操作。
+下面使用索引的方法，都会依赖Node<E> node(int index)方法。即**先查找节点，再进行其他操作**。
 
 #### 4.1 add(E e)
 
-向链表尾部添加一个元素。
+向链表尾部添加一个元素（尾插）。
 
 > ArrayList基于数组存储结构实现，在添加元素时，要保证容量足够。但LinkedList在物理上是不连续的，没有容量的定义，所以add时，也不用像ArrayList那样提前分配和保证余量。只需要新增一个Node，然后修改链接即可。
 
@@ -777,7 +789,7 @@ Node<E> node(int index) {
 }
 ```
 
-node(int index)方法中，使用了**二分查找**。如果索引位于前半部分（index<(size>>1)），从头开始查找，否则从尾开始查找，以提高效率。同时也验证了之前的结论，ArrayList支持随机访问，查询效率比较高，LinkedList虽然有索引，但不物理内存连续，不支持随机访问，需要从头或尾遍历，效率相对较低。
+**node(int index)根据索引查找，使用了二分查找。如果索引位于前半部分（index<(size>>1)），从头开始查找，否则从尾开始查找，以提高效率**。同时也验证了之前的结论，ArrayList支持随机访问，查询效率比较高，LinkedList虽然有索引，但不物理内存连续，不支持随机访问，需要从头或尾遍历，效率相对较低。
 
 #### 4.3 remove(int index)
 
@@ -830,9 +842,9 @@ private boolean isElementIndex(int index) {
 
 #### 4.4 remove(Object o)
 
-根据节点值删除。依赖equals()，所以要求o重写equals()，否则使用继承自Object的equals()是比较地址值。
+根据节点值删除，依赖equals()。即要求元素o重写equals()，否则使用继承自Object的equals()是比较地址值。
 
-> 根据值，从头开始遍历，删除第一个匹配的节点后结束。这里也可以看到，LinkedList（List）可以存储null，而且元素可以重复。
+从头遍历，删除第一个匹配的节点后结束。这里也可以看到，LinkedList（List）可以存储null，而且元素可以重复。
 
 ```java
 public boolean remove(Object o) {

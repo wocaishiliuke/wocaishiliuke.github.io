@@ -75,9 +75,12 @@ public class LinkedList<E> extends AbstractSequentialList<E> implements List<E>,
 
 ## 2.扩展
 
-稍微扩展下数据结构和数据存储结构，方便后面内容的理解。
-- 数据结构：队列、栈
-- 数据存储结构：数组、链表
+稍微扩展下Java中的数据结构和数据存储结构，方便后面内容的理解。
+- 数据结构：队列、栈、树
+- 数据存储结构
+    + 线性表：
+        + 数组：物理存储连续、固定长度。如数组、ArrayList
+        + 链表：物理存储不连续、可伸缩，元素的逻辑顺序靠指针维持。分为单、双链表。如LinkedList
 
 > 队列和栈区别
 
@@ -116,7 +119,7 @@ public class LinkedList<E> extends AbstractSequentialList<E> implements List<E>,
 
 集合中部分子类是基于数组实现的，如ArrayList，初始长度（第一次add时）10，超出时扩容1.5倍
 
-## 2.概述
+## 2.Collection接口
 
 所有单列集合都直接或间接地实现了Collection接口。接口中定义了一些通用方法，包括操作元素、操作集合等方法。
 

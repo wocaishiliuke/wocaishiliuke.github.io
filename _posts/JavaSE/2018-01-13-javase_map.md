@@ -153,7 +153,7 @@ map.put("a", 1);
 
 - 数组长度设计
 
-在HashMap中，**哈希数组table的长度必须为2的n次方**，这是一种非常规的设计。[常规的设计是把桶的大小设计为素数](https://blog.csdn.net/liuqiyao_01/article/details/14475159)，因为素数导致冲突的概率要小于合数，比如Hashtable的初始化桶大小就是11（但它扩容后不能保证还是素数）。HashMap之所以采用这种非常规设计，主要是为了在取模和扩容时做优化。
+在HashMap中，**哈希数组table的长度必须为2的n次方**，这是一种非常规的设计。[常规的设计是把桶的大小设计为素数](https://blog.csdn.net/liuqiyao_01/article/details/14475159)，因为素数导致冲突的概率要小于合数，比如Hashtable的初始化桶大小就是11（但它扩容后不能保证还是素数）。**HashMap之所以采用这种非常规设计，主要是为了在取模和扩容时做优化。**
 
 - 高位运算
 
@@ -667,7 +667,7 @@ JDK1.8的这个设计非常巧妙，在节省重新计算hash值的时间。同�
 
 HashMap是线程不安全的，推荐使用线程安全的ConcurrentHashMap。JDK1.8之前，HashMap在多线程时可能造成死循环，导致cpu使用率飙升到100%，并且有可能会丢失数据。JDk1.8之后，不会再造成死循环，但无法规避数据丢失的可能。
 
-之所以在put()中讲述HashMap的线程安全问题，是因为**环链（JDK1.7）和数据丢失**就发生在put操作时的扩容、数据转移过程中。
+之所以在put()中讲述HashMap的线程安全问题，是因为**环链（JDK1.7）和数据丢失就发生在put时的扩容、数据转移过程中**。
 
 先来看一下**JDK1.7**中的HashMap，在**多线程**时为什么会造成死循环。
 
@@ -1082,6 +1082,15 @@ public static int hashCode(Object a[]) {
 - b.**31可以被JVM优化**
 　
 31 * i = (i << 5) - i，JVM可以使用位运算更高效的计算。
+
+**另外，HashMap的key可以为null（单个，多个会覆盖）**
+
+```java
+Map<String, Object> map = new HashMap<>();
+map.put(null,1);
+map.put(null,2);
+System.out.println(map);
+```
 
 
 ---
