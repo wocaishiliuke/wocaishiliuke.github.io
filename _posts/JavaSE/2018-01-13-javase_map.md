@@ -20,14 +20,12 @@ tags:
 
 
 ---
-
 # I.Map
 
 Map接口的方法，参见上篇[Collection&Map](http://blog.wocaishiliuke.cn/javase/2018/01/11/javase_collection&map/)
 
 
 ---
-
 # II.HashMap
 
 HashMap实现了Map接口，继承了抽象类AbstractMap，可克隆，可被序列化。
@@ -1521,7 +1519,6 @@ get()访问时，如果是按访问有序，通过afterNodeAccess()来调整双�
 
 
 ---
-
 # IV.TreeMap
 
 
