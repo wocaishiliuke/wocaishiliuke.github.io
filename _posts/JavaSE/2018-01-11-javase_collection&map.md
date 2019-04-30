@@ -76,7 +76,7 @@ public class LinkedList<E> extends AbstractSequentialList<E> implements List<E>,
 ## 2.扩展
 
 稍微扩展下Java中的数据结构和数据存储结构，方便后面内容的理解。
-- 数据结构：队列、栈、树
+- 数据结构：队列、栈、树、图等
 - 数据存储结构
     + 线性表：
         + 数组：物理存储连续、固定长度。如数组、ArrayList

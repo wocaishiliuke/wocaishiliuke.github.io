@@ -79,7 +79,7 @@ static final int MIN_TREEIFY_CAPACITY = 64;
 
 ![avatar](http://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/JavaSE/collection/hashmap-structure.png)
 
-其中，数组指Node<K,V>[] table。Node是HashMap的内部类（JDK1.8前叫Entry），实现了Map.Entry接口。Node本质就是K-V键值对，额外还有2个属性hash和next，分别表示key的哈希值和下一节点引用(组织链表)。
+其中，数组指Node<K,V>[] table。Node是HashMap的内部类（JDK1.8前叫Entry），实现了Map.Entry接口。Node本质就是K-V键值对，额外还有2个属性hash和next，分别表示key的哈希值和下一节点引用（链表）。
 
 ```java
 static class Node<K,V> implements Map.Entry<K,V> {
@@ -639,13 +639,14 @@ void transfer(Entry[] newTable, boolean rehash) {
 
 JDK1.8的HashMap和之前版本的不同（优化）：
 
-||实现结构|put时的链表插入|key的哈希值的计算方式|resize的实现|
-|JDK1.8|数组+链表/红黑树|尾插法|优化了高位运算，通过hashCode()的高16位异或低16位实现|resize不会产生环链，避免导致cpu使用率飙升到100%，但仍有数据丢失的可能|
-|之前版本|数组+链表|头插法|-|旧链表迁移的时候，如果在新表的数组索引位置相同，则链表元素会倒置，而JDK1.8会保持原来链表的顺序|
+|  |实现结构|key的哈希值的计算方式|put时的链表插入|resize时的数据迁移|resize的实现|
+|:-|:------|:-----------------|:-------------|:---------------|:----------|
+|JDK1.8|数组+链表/红黑树|优化了高位运算，通过hashCode()的高16位异或低16位实现|尾插法|bit位判断代替rehash+平移|resize不会产生环链，避免导致cpu使用率飙升到100%，但仍有数据丢失的可能|
+|之前版本|数组+链表|-|头插法|遍历+rehash+头插|旧链表迁移的时候，如果在新表的数组索引位置相同，则链表元素会倒置，而JDK1.8会保持原来链表的顺序|
 
 - 红黑树优化
-- 确定索引时的高位运算
-- 扩容数据迁移时，使用bit位判断代替rehash，使用平移代替会倒序的头插法（不会环链）
+- 确定索引时，高位参与运算
+- 扩容数据迁移时，使用bit位判断代替rehash，使用平移（相当于遍历+尾插）代替会倒序的头插法（不会环链）
 
 JDK1.8中，**数据迁移时不需要rehash，而是通过直接判断对应高位（n-1对应的高位），确定在新数组中的index（原位置或原位置+cap），效率较高**。
 
@@ -653,17 +654,17 @@ JDK1.8中，**数据迁移时不需要rehash，而是通过直接判断对应高
 
 ![avatar](https://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/JavaSE/collection/hashMap8_indexFor.png)
 
-元素保持index位置不变，还是移动2次幂，关键看：和(n-1)新增位（上图中的红色位）对应的hash值中的bit位，是0还是1。于是在JDK1.8中做了优化：检查原hash值中新增参与位于运算的那个bit位，是1还是0。是0索引不变，是1索引变成"原索引+oldCap"。
+元素保持index位置不变，还是移动2次幂，关键看：和(n-1)新增位（上图中的红色位）对应的hash值中的bit位，是0还是1。于是在JDK1.8中做了优化：检查原hash值中新增参与位与运算的那个bit位，是1还是0。是0索引不变，是1索引变成"原索引+oldCap"。
 
 ![avatar](https://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/JavaSE/collection/hashMap8_resize.png)
 
-JDK1.8的这个设计非常巧妙，在节省重新计算hash值的时间。同时，新增参与位于运算的bit位是0还是1，可以认为是随机的，因此resize的过程，也会把之前的冲突节点分散到新的bucket上。
+JDK1.8的这个设计非常巧妙，节省重新计算hash值的时间。同时，新增参与位与运算的bit位是0还是1，可以认为是随机的，因此resize的过程，也会把之前的冲突节点分散到新的bucket上。
 
 另外，JDK1.7中，在旧链表迁移时，如果在新表的数组索引位置没有变化，则链表元素会倒置。但JDK1.8中不会倒置。
 
 #### 4.5 线程安全
 
-HashMap是线程不安全的，推荐使用线程安全的ConcurrentHashMap。JDK1.8之前，HashMap在多线程时可能造成死循环，导致cpu使用率飙升到100%，并且有可能会丢失数据。JDk1.8之后，不会再造成死循环，但无法规避数据丢失的可能。
+HashMap是线程不安全的，推荐使用线程安全的ConcurrentHashMap。JDK1.8之前，HashMap在多线程时可能造成死循环，导致cpu使用率飙升到100%，并且有可能会丢失数据。**JDk1.8之后，不会再造成死循环，但无法规避数据丢失的可能**。
 
 之所以在put()中讲述HashMap的线程安全问题，是因为**环链（JDK1.7）和数据丢失就发生在put时的扩容、数据转移过程中**。
 
@@ -769,7 +770,7 @@ e = next = 1-A
 
 ![avatar](https://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/JavaSE/collection/java7_hashMap_Infinite_loop6.png)
 
-**可以看到形成了环链，并且数据丢失（线程不安全）。之后如果遍历到环链这里，会一直在这里遍历next，导致死循环。**
+**可以看到形成了环链，并且数据丢失（11-D）。之后如果遍历到环链这里，会一直在这里遍历next，导致死循环。**
 
 > 实际在IDEA调试时，由于debug窗口中的变量，也会查询map中的元素，所以在产生环链后的操作很卡顿，使用top查看CPU爆表，控制台报错如下
 
@@ -1075,7 +1076,7 @@ public static int hashCode(Object a[]) {
 
 素数不容易冲突，而太小的素数也不合适，范围太小，太大可能超出int的最大范围。
 
-> 国外有人做的测试：对超过50,000个英文单词进行hashCode，使用常数31, 33, 37, 39, 41作为乘子，每个常数算出的哈希值冲突数都小于7个，那么这几个数就被作为生成hashCode的备选乘数了。
+> 国外有人做的测试：对超过50,000个英文单词进行hashCode，使用常数31, 37, 39, 41作为乘子，每个常数算出的哈希值冲突数都小于7个，那么这几个数就被作为生成hashCode的备选乘数了。
 
 - b.**31可以被JVM优化**
 　
@@ -1092,7 +1093,6 @@ System.out.println(map);
 
 
 ---
-
 # III.LinkedHashMap
 
 ![avatar](https://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/JavaSE/collection/LinkedHashMap.png)
@@ -1103,7 +1103,7 @@ LinkedHashMap是HashMap的子类。继承了HashMap的所有特性，另外，**
 > - 单向链表：next指针，维护Map节点
 > - 双向链表：before和after指针，维护节点的遍历顺序
 
-## 顺序一致
+## 1.顺序一致
 
 和HashMap相比，LinkedHashMap增强了保持顺序的特点。为此，LinkedHashMap做了以下增强：
 
@@ -1121,7 +1121,7 @@ void afterNodeRemoval(Node<K,V> p) { }
 
 **LinkedHashMap支持2种顺序一致：存取顺序（insertion-order）、访问顺序（access-order）**。
 
-#### 存取顺序
+#### 1.1 存取顺序
 
 先插入的在前，后插入的在后，修改操作不改变顺序。
 
@@ -1174,11 +1174,9 @@ for (Map.Entry<String,Object> entry: map.entrySet()) {
 5--->5
 ```
 
-使用场景：通过LinkedHashMap的访问有序，实现LRU(Least Recently Used，最近最少使用)算法。如缓存
+使用场景：通过LinkedHashMap的访问有序，实现LRU(Least Recently Used，最近最少使用)算法，如缓存。
 
-
-> 凡是位于速度相差较大的两种硬件之间，用于协调两者数据传输速度差异的结构，均可称之为Cache**。
-> 主存容量远大于CPU缓存，磁盘容量远大于磁盘缓存，因此无论是哪一层次的缓存都面临一个同样的问题：当缓存空间用完后，如何挑选要舍弃的内容，为新缓存的内容腾出空间。解决这个问题的算法有几种，如最久未使用算法（LFU）、先进先出算法（FIFO）、最近最少使用算法（LRU）、非最近使用算法（NMRU）等。这些算法在不同层次的缓存上执行时拥有不同的效率和代价，需根据具体场合选择最合适的一种。而本文讲的LinkedHashMap的按访问有序，就可以很容易的实现LRU算法。
+> 凡是位于速度相差较大的两种实体之间，用于协调两者数据传输速度差异的结构，均可称之为Cache**。主存容量远大于CPU cache，磁盘容量远大于磁盘缓存。任何缓存都面临一个同样的问题：当缓存空间用完后，如何挑选要舍弃的内容，为新缓存的内容腾出空间。常见的解决算法有：最久未使用算法（LFU）、先进先出算法（FIFO）、最近最少使用算法（LRU）、非最近使用算法（NMRU）等。这些算法在不同层次的缓存上执行时拥有不同的效率和代价，需根据具体场合选择。本文讲的LinkedHashMap的访问有序，就可以很容易的实现LRU算法。
 
 ```java
 public class LRUCache<K,V> extends LinkedHashMap<K,V> {
@@ -1186,14 +1184,14 @@ public class LRUCache<K,V> extends LinkedHashMap<K,V> {
     private int maxSize;
 
     public LRUCache(int maxSize) {
-        super(16,0.75f, true);//开启访问顺序
+        super(16,0.75f, true);  //开启访问顺序
         this.maxSize = maxSize;
     }
 
     //重写LinkedHashMap中的removeEldestEntry()
     @Override
     protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {
-        return this.size() > maxSize;
+        return this.size() > maxSize; //超出size时，开启清除"最老节点"（该Map永远不会扩容）
     }
 }
 ```
@@ -1220,7 +1218,7 @@ public void test() {
 4--->4
 ```
 
-其中removeEldestEntry是LinkedHashMap特有的方法。该方法用于插入键值对后afterNodeInsertion()调用，如果返回true，则会清除“最老”(最久未访问)的键值对。LinkedHashMap中该方法总是返回false，即插入后永远不会清除元素。所以要实现LRU，需要重写此方法。
+其中removeEldestEntry是LinkedHashMap特有的方法。该方法用于插入键值对后，在afterNodeInsertion()中被调用。如果返回true，则会清除"最老"(最久未访问)的键值对。LinkedHashMap中该方法总是返回false，即插入后永远不会清除元素。所以要实现LRU，需要重写此方法。
 
 ```java
 // LinkedHashMap
@@ -1287,7 +1285,7 @@ transient LinkedHashMap.Entry<K,V> tail;
 final boolean accessOrder;
 ```
 
-相比于HashMap的Node，LinkedHashMap的Entry除了有next指针(继承自HashMap.Node)外，还有指向前驱、后继的before、after指针。LinkedHashMap是通过【数组+链表/红黑树+双向链表】实现的。
+相比于HashMap的Node，LinkedHashMap的Entry除了有next指针(继承自HashMap.Node)外，还有指向前驱、后继的before、after指针。**LinkedHashMap是通过【数组+链表/红黑树+双向链表】实现的**。
 
 示例：某LinkedHashMap数组table的size=4，loadFactor=1，依次put四个元素（5、1、9、3为key）。假设index是简单的通过key.hashCode()取模mod数组长度来确定，则LinkedHashMap的内部结构大致为：
 
@@ -1344,7 +1342,9 @@ private void linkNodeLast(LinkedHashMap.Entry<K,V> p) {
 - afterNodeAccess：当按访问顺序时，维护双向链表结构，将最新访问的节点移到双向链表的尾部
 - afterNodeInsertion：插入节点后，检查是否需要清除最老节点（LRU）。默认永不删除（因为removeEldestEntry返回false），如果需要清除最老节点，可以参考上述LRU示例：LRUCache
 
-###### afterNodeAccess
+> afterNodeInsertion是在插入节点后，检查是否需要清除最老节点。linkNodeLast才是插入前，维护双向链表。
+
+##### afterNodeAccess
 
 ```java
 void afterNodeAccess(Node<K,V> e) { // move node to last
@@ -1379,7 +1379,7 @@ void afterNodeAccess(Node<K,V> e) { // move node to last
 
 除了HashMap.put()中调用外，afterNodeAccess()在replace()、merge()、compute()中也有调用。保证access-order时，最后被访问的节点会被移到双向链表尾部。（insertion-order时，该方法不做任何操作）
 
-###### afterNodeInsertion
+##### afterNodeInsertion
 
 插入后，是否删除head节点（双向链表的头结点）
 
@@ -1402,7 +1402,7 @@ void afterNodeInsertion(boolean evict) { // possibly remove eldest
 
 LinkedHashMap也没有重写remove()，完全使用继承的HashMap.remove()。和put操作一样，remove操作在单向链表中删除节点后，也是通过钩子方法，完成在双向链表中该节点的删除。
 
-！[avatar](https://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/JavaSE/collection/LinkedHashMap_remove.jpg)
+![avatar](https://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/JavaSE/collection/LinkedHashMap_remove.jpg)
 
 > HashMap的remove()和removeNode()，详见上述，这里不再赘述。
 
@@ -1511,15 +1511,16 @@ public boolean containsValue(Object value) {
 
 **对比HashMap可以发现，LinkedHashMap其实就是比HashMap多了access-order，即双向链表和维护双向链表的逻辑。双向链表的维护是通过【linkNodeLast()+钩子方法实现的】**。
 
-put()插入时，首先在newNode()时，就通过linkNodeLast()（非钩子方法，LinkedHashMap特有）将新Entry维护到双向链表的表尾。然后通过钩子方法afterNodeAccess()，完成在访问顺序时的双向链表的维护（不管是访问有序还是插入有序，此时都要维护），以及通过钩子方法afterNodeInsertion()，判断是否删除最老节点。
+put()时：首先在newNode()时，就通过linkNodeLast()（非钩子方法，LinkedHashMap特有）将新Entry维护到双向链表的表尾。然后通过钩子方法afterNodeAccess()，完成在访问顺序时的双向链表的维护（不管是访问有序还是插入有序，此时都要维护），以及通过钩子方法afterNodeInsertion()，判断是否删除最老节点。
 
-remove()删除时，在单向链表中删除节点后，通过钩子方法afterNodeRemoval()，在双向链表中也删除该节点。
+remove()时：在单向链表中删除节点后，通过钩子方法afterNodeRemoval()，在双向链表中也删除该节点。
 
-get()访问时，如果是按访问有序，通过afterNodeAccess()来调整双向链表结构，否则按插入有序则不变。
+get()时：如果是按访问有序，通过afterNodeAccess()来调整双向链表结构，否则按插入有序则不变。
 
 
 ---
 # IV.TreeMap
+
 
 
 

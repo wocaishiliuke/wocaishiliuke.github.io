@@ -8,7 +8,7 @@ tags:
     - Jekyll
 ---
 
-本文介绍使用Github Pages和Jekyll搭建博客。该方式方便简单，不需要个人服务器、管理域名等，和github浑然一体，方便管理和更新。
+本文介绍使用Github Pages和Jekyll搭建博客。该方式方便简单，不需要个人服务器、管理域名（这里实际还是使用了自己的域名）等，和github浑然一体，方便管理和更新。
 
 <!-- more -->
 
@@ -173,6 +173,7 @@ leancloud_visitors:
 ```
 # 在LeanCloud应用的安全中心的Web安全域名中填写
 http://blog.wocaishiliuke.cn
+https://blog.wocaishiliuke.cn
 ```
 
 ###### 2.后台
