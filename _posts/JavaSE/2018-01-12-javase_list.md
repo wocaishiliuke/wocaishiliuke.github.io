@@ -122,7 +122,24 @@ Marker interface used by List implementations to indicate that they support fast
 
 ## 2.并发修改异常
 
-ConcurrentModificationException。遍历中，增删元素，抛出的异常。Iterator或foreach都会出现该异常。以ArrayList为例：
+ConcurrentModificationException。Java集合的迭代器采用了"fail-fast"或"fail -safe"机制，区别就在于并发修改时（包括单线程和多线程），是否抛出该异常。
+
+#### 2.1 fail-fast和fail-safe
+
+```
+Iterators in java are used to iterate over the Collection objects.Fail-Fast iterators immediately throw ConcurrentModificationException if there is structural modification of the collection. Structural modification means adding, removing or updating any element from collection while a thread is iterating over that collection. Iterator on ArrayList, HashMap classes are some examples of fail-fast Iterator.
+
+Fail-Safe iterators don’t throw any exceptions if a collection is structurally modified while iterating over it. This is because, they operate on the clone of the collection, not on the original collection and that’s why they are called fail-safe iterators. Iterator on CopyOnWriteArrayList, ConcurrentHashMap classes are examples of fail-safe Iterator.
+```
+
+|机制（迭代器类型）|structural modification时|示例|
+|:---------------|:-----------------------|:---|
+|fail-fast iterator|抛异常|ArrayList、HashMap等|
+|fail-fast iterator|不抛异常|CopyOnWriteArrayList、ConcurrentHashMap等|
+
+#### 2.2 示例
+
+对于fail-fast迭代器，使用Iterator或foreach遍历中，增删元素，会抛出该异常。以ArrayList为例：
 
 > 增强for循环只是一个语法糖，编译后还是使用的迭代器Iterator
 
@@ -148,7 +165,7 @@ Exception in thread "main" java.util.ConcurrentModificationException
     at com.baicai.thread.Test1.main(Test1.java:40)
 ```
 
-#### 2.1 原因
+#### 2.3 原因
 
 根据报错，查看ArrayList$Itr源码
 
@@ -247,9 +264,12 @@ public class ArrayList<E> extends AbstractList<E> implements List<E>, RandomAcce
 
 所以原因：**ArrayList的add()和remove()中，都会modCount++，导致expectedModCount和modCount不再相等，抛出异常**。
 
-#### 2.2 解决
+#### 2.4 解决
 
 - 1.使用迭代器Itr提供的remove()，而非list的remove
+- 2.使用另一个内部类ListItr
+
+> 使用迭代器Itr提供的remove()，而非list的remove
 
 在Itr.remove()中，有expectedModCount = modCount操作，所以不会出现并发修改异常。
 
@@ -264,7 +284,7 @@ while (it.hasNext()){
 
 但没有Itr.add()，所以该方式只能解决"并发删除异常"，对于"并发增加"无计可施
 
-- 2.使用另一个内部类ListItr
+> 使用另一个内部类ListItr
 
 ListItr继承增强了Itr：可以**并发增加元素 && 提供双向遍历支持**。
 
@@ -318,7 +338,7 @@ while (lit.hasNext()){
 }
 ```
 
-- 3.多线程下的并发修改
+#### 2.5 多线程下的并发修改
 
 上面两个在单线程下可以避免并发修改异常。但在多线程下，对于共享List的并发读写出现并发修改异常的原因：**不是因为ArrayList是线程不安全的（使用Vector依然会报并发修改异常，线程安全和多线程下的并发修改异常是两个概念），而是因为modCount属于List，expectedModCount属于iterator（Itr）。即modCount是共享的，而每个线程都有自己的迭代器，自己的expectedModCount**。这就导致了即使使用了iterator.remove()，修改的线程没问题，但其他线程的expectedModCount可能还是0，即使modCount不是volatile的，其他线程也可能读到修改线程写回的最新值1，抛出异常。
 
@@ -369,11 +389,12 @@ t2--->c
 Exception in thread "Thread-0" java.util.ConcurrentModificationException
 ```
 
-此时解决方式有两种：
-> - 1.iterator迭代时，使用synchronized或者Lock进行同步，阻塞其他线程
-> - 2.使用并发容器CopyOnWriteArrayList（使用了ReentrantLock）代替ArrayList和Vector
+此时多线程下的解决方式有两种：
 
-#### 2.3 其他
+- 1.iterator迭代时，使用synchronized或者Lock进行同步，阻塞其他线程
+- 2.使用fail-safe迭代器：并发容器CopyOnWriteArrayList（使用了ReentrantLock）代替ArrayList
+
+#### 2.6 其他
 
 以下代码不会出现并发异常（删除的是倒数第二个元素）：
 

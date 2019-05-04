@@ -639,9 +639,9 @@ void transfer(Entry[] newTable, boolean rehash) {
 
 JDK1.8的HashMap和之前版本的不同（优化）：
 
-|  |实现结构|key的哈希值的计算方式|put时的链表插入|resize时的数据迁移|resize的实现|
+|  |实现结构|key哈希值的处理|put时的链表插入|resize时的数据迁移|resize的实现|
 |:-|:------|:-----------------|:-------------|:---------------|:----------|
-|JDK1.8|数组+链表/红黑树|优化了高位运算，通过hashCode()的高16位异或低16位实现|尾插法|bit位判断代替rehash+平移|resize不会产生环链，避免导致cpu使用率飙升到100%，但仍有数据丢失的可能|
+|JDK1.8|数组+链表/红黑树|优化了高位运算，通过hashCode()的高16位异或低16位实现|尾插法|bit位判断（代替rehash）+平移|resize不会产生环链，避免导致cpu使用率飙升到100%，但仍有数据丢失的可能|
 |之前版本|数组+链表|-|头插法|遍历+rehash+头插|旧链表迁移的时候，如果在新表的数组索引位置相同，则链表元素会倒置，而JDK1.8会保持原来链表的顺序|
 
 - 红黑树优化
@@ -1521,10 +1521,834 @@ get()时：如果是按访问有序，通过afterNodeAccess()来调整双向链�
 ---
 # IV.TreeMap
 
+TreeMap是基于[红黑树](https://blog.wocaishiliuke.cn/datastructure/2018/12/03/Binarytree01/)的有序Map实现。
 
+![avatar](https://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/DataStructure/treemap.png)
 
+> 其中SortedMap、NavigableMap两个接口，主要是根据TreeMap有序的特点，获取一定范围内的键值对集合。
+
+- TreeMap可以保证内部key的顺序，可以很方便的获取第一个、最后一个、或某区间内的Entry/key
+- 基于红黑树，根据键查找、删除、插入效率较高，时间复杂度为O(log2_T)
+
+## 1.有序
+
+有序是TreeMap的显著特点。TreeMap依赖比较器comparator或key实现Comparable来实现比较排序：
+- 自然排序（natural ordering）：Comparable.compareTo()
+- 比较器排序：comparator.compare()
+
+```java
+final int compare(Object k1, Object k2) {
+    return comparator==null ? ((Comparable<? super K>)k1).compareTo((K)k2)
+        : comparator.compare((K)k1, (K)k2);
+}
+```
+
+**在TreeMap中，比较器comparator不为null时，使用比较器排序；否则使用key的自然排序**。
+
+#### 1.1 Comparable
+
+可比较的。该接口只有一个方法：compareTo()，该方法也是该接口实现类的natural comparison method。
+
+null不是任何类的实例。所以e.compareTo(null)会抛NullPointerException
+
+```java
+public interface Comparable<T> {
+    /**
+     * e.compareTo(o)：小于返回-1，等于返回0，大于返回1
+     * @throws o=null时会抛NullPointerException
+     * @throws 如果o类不能和e比较（一般是不同类型），抛ClassCastException
+     */
+    public int compareTo(T o);
+}
+```
+
+#### 1.2 Comparator
+
+比较器。
+
+```java
+/**
+ * 一些集合用来排序的比较器。如Collections.sort(List,Comparator)、Arrays.sort(Object[],Comparator)，或不使用自然排序时SortedSet、SortedMap等集合中依赖的比较器。
+ */
+@FunctionalInterface
+public interface Comparator<T> {
+    /**
+     * o1小于o2返回-1，o1=02返回0，o1大于o2返回1
+     * @throws 当其中一个参数为null，并且该比较器不允许null时，抛NullPointerException
+     * @throws 当T类型不能使用该比较器时，抛ClassCastException
+     */
+    int compare(T o1, T o2);
+
+    //当obj也是一个比较器，并且和该comparator的排序规则一样时（实现类实现），返回true
+    boolean equals(Object obj);
+
+    // since1.8，有添加了很多方法
+    ...
+}
+```
+
+## 2.实现接口
+
+TreeMap实现了NavigableMap接口，NavigableMap接口又实现了SortedMap接口。
+
+```java
+public class TreeMap<K,V> extends AbstractMap<K,V> implements NavigableMap<K,V>, Cloneable, java.io.Serializable {
+    ...
+}
+```
+
+#### 2.1 SortedMap
+
+key排序过的Map。另外提供了一些基于key范围，获取子SortedMap视图的方法。
+
+```java
+/*
+ * key基于自然排序或比较器排序后的Map（有序体现在遍历时，类似于SortedSet）
+ * SortedMap中的keys，都实现了Comparable接口，或可以使用该类的comparator进行比较
+*/
+public interface SortedMap<K,conparV> extends Map<K,V> {
+    
+    //返回SortedMap中用于key之间进行比较的comparator
+    Comparator<? super K> comparator();
+
+    //返回SortedMap中，K在[fromKey,toKey)范围的所有键值对组成的子SortedMap视图
+    //注意：对子SortedMap视图的改变会影响SortedMap的内容，反之亦然
+    SortedMap<K,V> subMap(K fromKey, K toKey);
+    //返回SortedMap中，K在(-∞,toKey)范围的所有键值对组成的子SortedMap视图
+    //注意：对子SortedMap视图的改变会影响SortedMap的内容，vice-versa
+    SortedMap<K,V> headMap(K toKey);
+    //返回SortedMap中，K在[fromKey,+∞)范围的所有键值对组成的子SortedMap视图
+    //注意：对子SortedMap视图的改变会影响SortedMap的内容，反之亦然
+    SortedMap<K,V> tailMap(K fromKey);
+
+    //返回SortedMap中第一个键，如果SortedMap为空，抛NoSuchElementException
+    K firstKey();
+    //返回SortedMap中最后一个键，如果SortedMap为空，抛NoSuchElementException
+    K lastKey();
+
+    //返回SortedMap中所有key组成的Set
+    Set<K> keySet();
+    //返回SortedMap中所有value组成的Collection
+    Collection<V> values();
+    //返回SortedMap中所有Entry视图
+    //注意：对视图的改变会影响SortedMap的内容，反之亦然
+    Set<Map.Entry<K, V>> entrySet();
+}
+```
+
+#### 2.2 NavigableMap
+
+SortedMap的增强接口，扩展了更多导航方法。
+
+```java
+public interface NavigableMap<K,V> extends SortedMap<K,V> {
+    
+    //返回NavigableMap中严格小于key的最大的Entry
+    Map.Entry<K,V> lowerEntry(K key);
+    //返回NavigableMap中严格小于key的最大的key
+    K lowerKey(K key);
+
+    //返回NavigableMap中严格大于key的最小的Entry
+    Map.Entry<K,V> higherEntry(K key);
+    //返回NavigableMap中严格大于key的最小的key
+    K higherKey(K key);
+
+    //返回NavigableMap中小于等于key的最大的Entry
+    Map.Entry<K,V> floorEntry(K key);
+    //返回NavigableMap中小于等于key的最大的key
+    K floorKey(K key);
+
+    //返回NavigableMap中大于等于key的最小的Entry
+    Map.Entry<K,V> ceilingEntry(K key);
+    //返回NavigableMap中大于等于key的最小的key
+    K ceilingKey(K key);
+
+    //返回NavigableMap中第一个Entry，如果NavigableMap为空返回null
+    Map.Entry<K,V> firstEntry();
+    //返回NavigableMap中最后一个Entry，如果NavigableMap为空返回null
+    Map.Entry<K,V> lastEntry();
+    //删除并返回NavigableMap中第一个Entry，如果NavigableMap为空，返回null
+    Map.Entry<K,V> pollFirstEntry();
+    //删除并返回NavigableMap中最后一个Entry，如果NavigableMap为空，返回null
+    Map.Entry<K,V> pollLastEntry();
+
+    //返回NavigableMap的逆序NavigableMap视图
+    //注意：对视图的操作会影响原NavigableMap结构，反之亦然
+    NavigableMap<K,V> descendingMap();
+    //返回NavigableMap中所有key的逆序NavigableSet视图
+    //注意：对视图的操作会影响原NavigableMap结构，反之亦然
+    NavigableSet<K> descendingKeySet();
+
+    //返回NavigableMap中所有key的NavigableSet视图
+    //注意：对视图的操作会影响原NavigableMap结构，反之亦然
+    NavigableSet<K> navigableKeySet();
+
+    //返回NavigableMap中从fromKey到toKey的所有键值对组成的子NavigableMap视图，fromInclusive、toInclusive表示是否包含边界
+    //注意：对视图的操作会影响原NavigableMap结构，反之亦然
+    NavigableMap<K,V> subMap(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive);
+    //返回NavigableMap中小于toKey的所有键值对组成的子NavigableMap视图，inclusive表示是否包含边界
+    //注意：对视图的操作会影响原NavigableMap结构，反之亦然
+    NavigableMap<K,V> headMap(K toKey, boolean inclusive);
+    //返回NavigableMap中大于fromKey的所有键值对组成的子NavigableMap视图，inclusive表示是否包含边界
+    //注意：对视图的操作会影响原NavigableMap结构，反之亦然
+    NavigableMap<K,V> tailMap(K fromKey, boolean inclusive);
+
+    //等价于继承自SortedMap的subMap(fromKey, true, toKey, false)
+    SortedMap<K,V> subMap(K fromKey, K toKey);
+    //等价于继承自SortedMap的headMap(toKey, false)
+    SortedMap<K,V> headMap(K toKey);
+    //等价于继承自SortedMap的tailMap(fromKey, true)
+    SortedMap<K,V> tailMap(K fromKey);
+}
+```
+
+## 3.成员变量
+
+主要成员变量如下。
+
+```java    
+//用于比较器排序，natural ordering时为null
+private final Comparator<? super K> comparator;
+//红黑树根节点
+private transient Entry<K,V> root;
+//entry个数
+private transient int size = 0;
+//structural modification次数，用于实现fail-fast机制
+private transient int modCount = 0;
+```
+
+## 4.构造
+
+```java
+//空参构造，comparator=null，自然排序，该情形下要求key实现Comparable接口
+public TreeMap() {
+    comparator = null;
+}
+
+//构造指定comparator比较器的TreeMap，该比较器用于key排序
+public TreeMap(Comparator<? super K> comparator) {
+    this.comparator = comparator;
+}
+
+//通过Map构造，自然排序，要求m中的key实现Comparable接口。并使用putAll存入
+public TreeMap(Map<? extends K, ? extends V> m) {
+    comparator = null;
+    putAll(m);
+}
+
+//通过buildFromSorted函数，使用SortedMap构建一个红黑树TreeMap
+public TreeMap(SortedMap<K, ? extends V> m) {
+    comparator = m.comparator();
+    try {
+        buildFromSorted(m.size(), m.entrySet().iterator(), null, null);
+    } catch (java.io.IOException cannotHappen) {
+    } catch (ClassNotFoundException cannotHappen) {
+    }
+}
+```
+
+## 5.红黑树节点
+
+TreeMap中，使用内部类Entry表示红黑树的节点（HashMap是Node（Java8），LinkedHashMap是Entry）。
+
+每个节点Entry的属性：
+- key、value
+- 左孩子(left)、右孩子(right)、父节点(parent)
+- color颜色，TreeMap基于红黑树实现，每个节点非黑即红
+
+```java
+static final class Entry<K,V> implements Map.Entry<K,V> {
+    K key;
+    V value;
+    Entry<K,V> left;    //左子节点
+    Entry<K,V> right;   //右子节点
+    Entry<K,V> parent;  //父节点
+    boolean color = BLACK;//默认黑色
+
+    //该构造创建的节点，默认是黑色、叶子节点
+    Entry(K key, V value, Entry<K,V> parent) {
+        this.key = key;
+        this.value = value;
+        this.parent = parent;
+    }
+
+    public K getKey() { return key; }
+    public V getValue() { return value; }
+    public String toString() { return key + "=" + value; }
+
+    //新值覆盖旧值，返回旧值
+    public V setValue(V value) {
+        V oldValue = this.value;
+        this.value = value;
+        return oldValue;
+    }
+
+    public boolean equals(Object o) {
+        if (!(o instanceof Map.Entry))
+            return false;
+        Map.Entry<?,?> e = (Map.Entry<?,?>)o;
+        return valEquals(key,e.getKey()) && valEquals(value,e.getValue());
+    }
+
+    public int hashCode() {
+        int keyHash = (key==null ? 0 : key.hashCode());
+        int valueHash = (value==null ? 0 : value.hashCode());
+        return keyHash ^ valueHash;
+    }
+}
+```
+
+## 6.put(K key, V value)
+
+```java
+/**
+ * 插入节点，key已存在时只覆盖值
+ * @return key已存在时，返回原值（原值也可以是null）；key不存在时，返回null
+ * @throws 当key不能和map中已存在的keys比较时，抛ClassCastException
+ * @throws 当key=null，并且是自然排序或该map的比较器不允许键为null时，抛NullPointerException
+ */
+public V put(K key, V value) {
+    Entry<K,V> t = root;
+    /* 1.当插入的是空树时 */
+    if (t == null) {
+        //只是检查，是否抛ClassCastException或NullPointerException
+        compare(key, key); // type (and possibly null) check
+        root = new Entry<>(key, value, null);
+        size = 1;
+        modCount++;
+        return null;
+    }
+    /* 2.当插入的是非空树时 */
+    int cmp;
+    Entry<K,V> parent;
+    // split comparator and comparable paths
+    Comparator<? super K> cpr = comparator;
+    // 2.1 比较器排序
+    if (cpr != null) {
+        //使用while循环遍历RBT，而非迭代
+        do {
+            parent = t;
+            cmp = cpr.compare(key, t.key);
+            if (cmp < 0)
+                t = t.left;
+            else if (cmp > 0)
+                t = t.right;
+            else
+                return t.setValue(value);//key已存在，覆盖并返回原值
+        } while (t != null);
+    }
+    // 2.2 自然排序
+    else {
+        if (key == null)
+            throw new NullPointerException();
+        @SuppressWarnings("unchecked")
+            Comparable<? super K> k = (Comparable<? super K>) key;
+        do {
+            parent = t;
+            cmp = k.compareTo(t.key);
+            if (cmp < 0)
+                t = t.left;
+            else if (cmp > 0)
+                t = t.right;
+            else
+                return t.setValue(value);//key已存在，覆盖并返回原值
+        } while (t != null);
+    }
+    //key不存在,直接插入
+    Entry<K,V> e = new Entry<>(key, value, parent);
+    if (cmp < 0)
+        parent.left = e;
+    else
+        parent.right = e;
+    //插入后RBT的修复
+    fixAfterInsertion(e);
+    size++;
+    modCount++;
+    return null;
+}
+```
+
+上述两种情况（自然排序、比较器排序）下的RBT遍历，都是为了查找key节点（值覆盖）或作为新Entry将要插入位置的parent。
+
+```java
+// RBT插入后的修复
+private void fixAfterInsertion(Entry<K,V> x) {
+    // 1.规定插入的新节点为红色
+    x.color = RED;
+    // 2.当新节点：不为null && 不是root节点 && 父节点也是红色时，才需要修复
+    while (x != null && x != root && x.parent.color == RED) {
+        //x的父节点是左节点（叔叔节点为null或是右节点）
+        if (parentOf(x) == leftOf(parentOf(parentOf(x)))) {
+            Entry<K,V> y = rightOf(parentOf(parentOf(x)));//叔叔节点
+            if (colorOf(y) == RED) {
+                setColor(parentOf(x), BLACK);
+                setColor(y, BLACK);
+                setColor(parentOf(parentOf(x)), RED);
+                x = parentOf(parentOf(x));
+            } else {
+                if (x == rightOf(parentOf(x))) {
+                    x = parentOf(x);
+                    rotateLeft(x);
+                }
+                setColor(parentOf(x), BLACK);
+                setColor(parentOf(parentOf(x)), RED);
+                rotateRight(parentOf(parentOf(x)));
+            }
+        //x的父节点是左节点（叔叔节点为null或是右节点）
+        } else {
+            Entry<K,V> y = leftOf(parentOf(parentOf(x)));//叔叔节点
+            if (colorOf(y) == RED) {
+                setColor(parentOf(x), BLACK);
+                setColor(y, BLACK);
+                setColor(parentOf(parentOf(x)), RED);
+                x = parentOf(parentOf(x));
+            } else {
+                if (x == leftOf(parentOf(x))) {
+                    x = parentOf(x);
+                    rotateRight(x);
+                }
+                setColor(parentOf(x), BLACK);
+                setColor(parentOf(parentOf(x)), RED);
+                rotateLeft(parentOf(parentOf(x)));
+            }
+        }
+    }
+    // 3.当x是根节点时，直接涂黑（当x为null或父节点为黑时，该操作无意义）
+    root.color = BLACK;
+}
+```
+
+> 关于红黑树插入后的修复，参考[二叉树](https://blog.wocaishiliuke.cn/datastructure/2018/12/03/Binarytree01/)。
+
+## 7.putAll(Map<? extends K, ? extends V> map)
+
+- 如果TreeMap为空，map又是SortedMap，并且map的比较器和当前TreeMap的比较器相同，就通过buildFromSorted()构建红黑树
+- 否则调用AbstractMap.putAll()，依次插入map中的元素，每次插入都需要修复，效率不高
+
+```java
+/**
+ * 将一个map中的所有键值对添加到TreeMap中
+ * @throws ClassCastException if the class of a key or value in
+ *         the specified map prevents it from being stored in this map
+ * @throws NullPointerException if the specified map is null or
+ *         the specified map contains a null key and this map does not
+ *         permit null keys
+ */
+public void putAll(Map<? extends K, ? extends V> map) {
+    int mapSize = map.size();
+    if (size==0 && mapSize!=0 && map instanceof SortedMap) {
+        Comparator<?> c = ((SortedMap<?,?>)map).comparator();
+        if (c == comparator || (c != null && c.equals(comparator))) {
+            ++modCount;
+            try {
+                buildFromSorted(mapSize, map.entrySet().iterator(), null, null);
+            } catch (java.io.IOException cannotHappen) {
+            } catch (ClassNotFoundException cannotHappen) {
+            }
+            return;
+        }
+    }
+    super.putAll(map);
+}
+```
+
+> 构造TreeMap(Map m)调用了该putAll方法。构造TreeMap(SortedMap m)则直接使用了buildFromSorted()，和该方法中的逻辑相似。
+
+#### 7.1 buildFromSorted()
+
+通过buildFromSorted()构建一颗新红黑树：使用迭代器从小到大，以折半的方式组装RBT。构建成的红黑树，最下方的节点是红色，其他都是黑色。
+
+```java
+/**
+ * 基于已排序数据的树构建算法(线性时间). 可以从iterator或stream中接收keys和/或values
+ * @param size 从iterator或stream中读取的key或k-v对的个数
+ * @param it 如果非null, 将从iterator中读取的entries或keys插入TreeMap
+ * @param str 如果非null, 将从str流中读取keys插入TreeMap.
+ *        必须保证it和str其中一个不为null
+ * @param defaultVal 如果非null, 则插入的键值对的value都为defaultVal; 否则
+ *        从iterator或stream中读取value.
+ * @throws java.io.IOException propagated from stream reads.
+ * @throws ClassNotFoundException propagated from readObject.
+ */
+private void buildFromSorted(int size, Iterator<?> it, java.io.ObjectInputStream str, V defaultVal) throws  java.io.IOException, ClassNotFoundException {
+    this.size = size;
+    root = buildFromSorted(0, 0, size-1, computeRedLevel(size), it, str, defaultVal);
+}
+```
+
+```java
+//计算红黑树叶子结点的层数，在下面递归过程中，如果level=redLevel，则此时的结点为红色
+private static int computeRedLevel(int sz) {
+    int level = 0;
+    for (int m = sz - 1; m >= 0; m = m / 2 - 1)
+        level++;
+    return level;
+}
+```
+
+```java
+/**
+ * 真正创建树的方法(递归方式)
+ * @param level 当前树的level，初始值为0
+ * @param lo 当前子树的第一个元素的index，第一次递归为0
+ * @param hi 当前子树的最后一个元素的index，第一次递归为size-1
+ * @param redLevel 红节点的level
+ */
+@SuppressWarnings("unchecked")
+private final Entry<K,V> buildFromSorted(int level, int lo, int hi, int redLevel, Iterator<?> it, java.io.ObjectInputStream str, V defaultVal)
+    throws java.io.IOException, ClassNotFoundException {
+
+    if (hi < lo) return null;
+
+    int mid = (lo + hi) >>> 1;
+    Entry<K,V> left  = null;
+    if (lo < mid)
+        left = buildFromSorted(level+1, lo, mid - 1, redLevel, it, str, defaultVal);
+
+    // 从iterator或stream提取键值对
+    K key;
+    V value;
+    if (it != null) {
+        if (defaultVal==null) {
+            Map.Entry<?,?> entry = (Map.Entry<?,?>)it.next();
+            key = (K)entry.getKey();
+            value = (V)entry.getValue();
+        } else {
+            key = (K)it.next();
+            value = defaultVal;
+        }
+    } else { // use stream
+        key = (K) str.readObject();
+        value = (defaultVal != null ? defaultVal : (V) str.readObject());
+    }
+    Entry<K,V> middle =  new Entry<>(key, value, null);
+
+    // color nodes in non-full bottommost level red
+    if (level == redLevel)
+        middle.color = RED;
+
+    if (left != null) {
+        middle.left = left;
+        left.parent = middle;
+    }
+
+    if (mid < hi) {
+        Entry<K,V> right = buildFromSorted(level+1, mid+1, hi, redLevel, it, str, defaultVal);
+        middle.right = right;
+        right.parent = middle;
+    }
+
+    return middle;
+}
+```
+
+> 上述方法中，lo和hi参数是从迭代器或stream中取出元素的最小和最大索引（这些元素用于插入当前子树）。实际上没有索引，只是因为序列是有序的，可以通过这种折半取数的方式保证顺序。
+
+该方法使用递归方式，将一个有序序列构建成红黑树。以序列[1,2,3,4,5,6,7,8,9,10]为例，构建过程为：
+- 1.以最中间的数作为根结点，然后将序列分成两组，(1,2,3,4) (6,7,8,9,10)
+- 2.递归第一组序列找出最中间的树作为根结点，建立一个子树，该子树作为整个树的左子树
+- 3.递归第二组序列找出最中间的树作为根结点，建立一个子树，该子树作为整个树的右子树
+- 4.最终形成的树，在叶子结点以上是一个满二叉树。并把所有的叶子节点标记为红色，满足红黑树的大致平衡要求
+
+![avatar](https://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/DataStructure/tree-map-build-from-sorted.jpg)
+
+#### 7.2 putAll
+
+不满足上述条件时（当前TreeMap为空，参数map又是SortedMap，且参数map的比较器和当前TreeMap的比较器相同），就不能使用buildFromSorted()。而是使用AbstractMap.putAll()（实际是TreeMap.put()）依次插入，但每次插入都需要修复，时间复杂度为O(n * logn)，效率低。
+
+```java
+//AbstractMap.putAll()
+public void putAll(Map<? extends K, ? extends V> m) {
+    for (Map.Entry<? extends K, ? extends V> e : m.entrySet())
+        //又调用自己覆写的TreeMap.put(),详见上述
+        put(e.getKey(), e.getValue());
+}
+```
+
+## 8.remove(Object key)
+
+```java
+/**
+ * Removes the mapping for this key from this TreeMap if present.
+ * @param  key 待删除的key
+ * @return 待删除key对应的value（可以为null），如果key不存在，返回null
+ * @throws 如果key和TreeMap中所有的key无法进行比较，抛ClassCastException
+ * @throws 当key=null，并且是自然排序或比较器排序时该map的比较器不允许键为null时，抛NullPointerException
+ */
+public V remove(Object key) {
+    Entry<K,V> p = getEntry(key);
+    if (p == null)
+        return null;
+
+    V oldValue = p.value;
+    deleteEntry(p);
+    return oldValue;
+}
+```
+
+getEntry(key)的分析见下述get(Object key)小节。deleteEntry()的实现分有三种情况（其实就是BST的删除）：
+
+- 叶子节点：直接将父节点对应引用置null即可
+- 只有一个孩子：直接将父亲节点和孩子节点建立链接
+- 有两个孩子：需要寻找后继（右子树的最小值），替换当前节点的内容，然后删除后继节点（后继一定没有左孩子，就将两个孩子的情况转换为前两种情况）
+
+```java
+//Delete node p, and then rebalance the tree.
+private void deleteEntry(Entry<K,V> p) {
+    modCount++;
+    size--;
+
+    // 1.当p有两个孩子，使用后继节点s的内容替换当前节点p的内容。将真正要删除的p指向后继s
+    if (p.left != null && p.right != null) {
+        Entry<K,V> s = successor(p);
+        p.key = s.key;
+        p.value = s.value;
+        p = s;//转化成叶子节点或单子节点的情况，从此p就是真正要删除的节点引用了
+    }
+    
+    Entry<K,V> replacement = (p.left != null ? p.left : p.right);//p的子节点
+    // 2.p是单子节点
+    if (replacement != null) {
+        // 将p的父、子节点相连（两步）
+        // 2.1 修改子节点的父引用
+        replacement.parent = p.parent;
+        // 2.2 修改父节点的子引用
+        if (p.parent == null)// p是root节点，单子节点
+            root = replacement;
+        else if (p == p.parent.left)
+            p.parent.left  = replacement;
+        else
+            p.parent.right = replacement;
+
+        // Null out links so they are OK to use by fixAfterDeletion.
+        p.left = p.right = p.parent = null;
+        // Fix replacement
+        if (p.color == BLACK)
+            fixAfterDeletion(replacement);// 修复的是最终删除的replacement，而非p
+    // 3.p是叶子节点
+    } else if (p.parent == null) {  // p又是root节点
+        root = null;
+    } else {
+        if (p.color == BLACK)
+            fixAfterDeletion(p);    // 修复的是最终删除的p
+
+        if (p.parent != null) {
+            if (p == p.parent.left)
+                p.parent.left = null;
+            else if (p == p.parent.right)
+                p.parent.right = null;
+            p.parent = null;
+        }
+    }
+}
+```
+
+RBT删除节点后的修复逻辑，可参考[二叉树](https://blog.wocaishiliuke.cn/datastructure/2018/12/03/Binarytree01/)。
+
+```java
+private void fixAfterDeletion(Entry<K,V> x) {
+    // 当真正删除的x，不是root并且是黑色时
+    while (x != root && colorOf(x) == BLACK) {
+        // x是左孩子
+        if (x == leftOf(parentOf(x))) {
+            Entry<K,V> sib = rightOf(parentOf(x));  // 兄弟节点
+            // case1：左旋+变色，转化成其他case
+            if (colorOf(sib) == RED) {
+                setColor(sib, BLACK);
+                setColor(parentOf(x), RED);
+                rotateLeft(parentOf(x));
+                sib = rightOf(parentOf(x));
+            }
+            // case2：变色，并向上追溯
+            if (colorOf(leftOf(sib))  == BLACK &&
+                colorOf(rightOf(sib)) == BLACK) {
+                setColor(sib, RED);
+                x = parentOf(x);
+            } else {
+                // case4：右旋+变色，转化成case5
+                if (colorOf(rightOf(sib)) == BLACK) {
+                    setColor(leftOf(sib), BLACK);
+                    setColor(sib, RED);
+                    rotateRight(sib);
+                    sib = rightOf(parentOf(x));
+                }
+                // case5：左旋+变色
+                setColor(sib, colorOf(parentOf(x)));
+                setColor(parentOf(x), BLACK);
+                setColor(rightOf(sib), BLACK);
+                rotateLeft(parentOf(x));
+                x = root;
+            }
+        } else { // 对称操作（x是右孩子）
+            Entry<K,V> sib = leftOf(parentOf(x));
+
+            if (colorOf(sib) == RED) {
+                setColor(sib, BLACK);
+                setColor(parentOf(x), RED);
+                rotateRight(parentOf(x));
+                sib = leftOf(parentOf(x));
+            }
+
+            if (colorOf(rightOf(sib)) == BLACK &&
+                colorOf(leftOf(sib)) == BLACK) {
+                setColor(sib, RED);
+                x = parentOf(x);
+            } else {
+                if (colorOf(leftOf(sib)) == BLACK) {
+                    setColor(rightOf(sib), BLACK);
+                    setColor(sib, RED);
+                    rotateLeft(sib);
+                    sib = leftOf(parentOf(x));
+                }
+                setColor(sib, colorOf(parentOf(x)));
+                setColor(parentOf(x), BLACK);
+                setColor(leftOf(sib), BLACK);
+                rotateRight(parentOf(x));
+                x = root;
+            }
+        }
+    }
+    // 当真正删除的x，是root，或是红色时
+    setColor(x, BLACK);
+}
+```
+
+## 9.get(Object key)
+
+```java
+/**
+ * 通过key获取value
+ * @throws ClassCastException 由getEntry传递抛出
+ * @throws NullPointerException 由getEntry传递抛出
+ */
+public V get(Object key) {
+    Entry<K,V> p = getEntry(key);
+    return (p==null ? null : p.value);
+}
+```
+
+```java
+/**
+ * 通过key获取Entry
+ * @throws ClassCastException if the specified key cannot be compared
+ *         with the keys currently in the map
+ * @throws NullPointerException if the specified key is null
+ *         and this map uses natural ordering, or its comparator
+ *         does not permit null keys
+ */
+final Entry<K,V> getEntry(Object key) {
+    // 1.出于性能考虑，分离出使用比较器获取Entry的情况
+    if (comparator != null)
+        return getEntryUsingComparator(key);
+    if (key == null)
+        //comparator为null（自然排序），如果key也为null，抛NPE
+        throw new NullPointerException();
+    // 2.自然排序查找
+    @SuppressWarnings("unchecked")
+        Comparable<? super K> k = (Comparable<? super K>) key;
+    Entry<K,V> p = root;
+    // while循环方式，遍历红黑树
+    while (p != null) {
+        int cmp = k.compareTo(p.key);
+        if (cmp < 0)
+            p = p.left;
+        else if (cmp > 0)
+            p = p.right;
+        else
+            return p;
+    }
+    return null;
+}
+
+/** 使用comparator来getEntry（比较器排序查找） */
+final Entry<K,V> getEntryUsingComparator(Object key) {
+    @SuppressWarnings("unchecked")
+        K k = (K) key;
+    Comparator<? super K> cpr = comparator;
+    if (cpr != null) {
+        Entry<K,V> p = root;
+        while (p != null) {
+            int cmp = cpr.compare(k, p.key);
+            if (cmp < 0)
+                p = p.left;
+            else if (cmp > 0)
+                p = p.right;
+            else
+                return p;
+        }
+    }
+    return null;
+}
+```
+
+## 10.containsKey(Object key)
+
+TreeMap中是否存在键key。同上，因为使用getEntry()，也可能抛ClassCastException和NPE。
+
+```java
+public boolean containsKey(Object key) {
+    return getEntry(key) != null;
+}
+```
+
+## 11.containsValue(Object value)
+
+判断当前TreeMap中是否存在值为value
+
+```java
+public boolean containsValue(Object value) {
+    for (Entry<K,V> e = getFirstEntry(); e != null; e = successor(e))
+        if (valEquals(value, e.value))
+            return true;
+    return false;
+}
+```
+
+```java
+// TreeMap中的第一个Entry（key最小的，最左最下的那个节点），空树返回null
+final Entry<K,V> getFirstEntry() {
+    Entry<K,V> p = root;
+    if (p != null)
+        while (p.left != null)
+            p = p.left;
+    return p;
+}
+
+// 返回t的后继节点successor（右子树的最小值）
+static <K,V> TreeMap.Entry<K,V> successor(Entry<K,V> t) {
+    if (t == null)
+        return null;
+    else if (t.right != null) {
+        Entry<K,V> p = t.right;
+        while (p.left != null)
+            p = p.left;
+        return p;
+    } else {
+        Entry<K,V> p = t.parent;
+        Entry<K,V> ch = t;
+        while (p != null && ch == p.right) {
+            ch = p;
+            p = p.parent;
+        }
+        return p;
+    }
+}
+```
+
+其中，successor(Entry<K,V> t)的逻辑为：
+- 1.先看t是否有右孩子，如果有，t的后继就是其右子树的最小节点
+- 2.如果t没有右孩子，那么后继为某祖先节点，从当前节点t往上找
+    + 如果t是其父节点p的左孩子，则其父节点p就是t的后继
+    + 如果t是其父节点p的右孩子，则继续向上找p的父节点，直到某个节点不是右孩子或其父节点为空，那么第一个非右孩子节点的父亲节点就是后继节点
+    + 如果父节点为空，则后继为null
+
+例如下图中，2的后继是3，3的后继是4，4的后继是5...，9的后继是null。
+
+![avatar](https://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/DataStructure/treemap-successor.jpg)
 
 
 ---
 
 # V.参考
+
+- [Java编程拾遗『TreeMap』](http://lidol.top/java/detail/986/)
