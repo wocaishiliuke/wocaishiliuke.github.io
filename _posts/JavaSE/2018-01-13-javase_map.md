@@ -16,7 +16,8 @@ tags:
 - [X] II.HashMap
 - [X] III.LinkedHashMap
 - [X] IV.TreeMap
-- [X] V.参考
+- [X] V.EnumMap
+- [X] VI.参考
 
 
 ---
@@ -2348,7 +2349,12 @@ static <K,V> TreeMap.Entry<K,V> successor(Entry<K,V> t) {
 
 
 ---
+# V.EnumMap
 
-# V.参考
+参考[EnumMap](http://lidol.top/java/1024/)
+
+
+---
+# VI.参考
 
 - [Java编程拾遗『TreeMap』](http://lidol.top/java/detail/986/)
