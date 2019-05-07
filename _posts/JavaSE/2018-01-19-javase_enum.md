@@ -275,6 +275,12 @@ public enum Season {
     // getter
     public int getCode() { return code; }
     public String getDesc() { return desc; }
+
+    // 覆盖方法  
+    @Override  
+    public String toString() {  
+        return this.code + "_" + this.desc;  
+    }
 }
 ```
 
@@ -383,6 +389,37 @@ public enum Singleton {
 
 关于单例，更多可参考[设计模式-单例模式](https://blog.wocaishiliuke.cn/designpatterns/2019/01/02/Singleton/)。
 
+## 7.实现接口
+
+```java
+public interface Behaviour {  
+    void print();  
+    String getInfo();  
+}  
+public enum Color implements Behaviour{  
+    RED("红色", 1), GREEN("绿色", 2), BLANK("白色", 3), YELLO("黄色", 4);  
+    
+    // 成员变量  
+    private String name;  
+    private int index;  
+    
+    // 构造方法  
+    private Color(String name, int index) {  
+        this.name = name;  
+        this.index = index;  
+    }  
+    
+    // 实现接口方法  
+    @Override  
+    public String getInfo() {  
+        return this.name;  
+    }  
+    @Override  
+    public void print() {  
+        System.out.println(this.index + ":" + this.name);  
+    }  
+}
+```
 
 ---
 # IV.枚举容器
