@@ -8,7 +8,7 @@ tags:
     
 ---
 
-本文摘自【芋道源码】的《深入解析单例模式的七种实现》，记录单例模式的实现方式。
+本文基于【芋道源码】的《深入解析单例模式的七种实现》稍作修改，记录单例模式的实现方式。
 
 <!-- more -->
 
@@ -107,53 +107,9 @@ com.baicai.singleton.Singleton1@1588196a
 
 高并发时，假设线程1进入getInstance()，判断引用为null，准备进入if块内执行实例化。此时该线程突然让出时间片，线程2进入方法，此时引用还是null。于是线程2进入if块执行实例化，线程1唤醒后也会进入if块进行实例化。结果就会出现2个实例。
 
-> 懒汉式不能保证单例，来看下饿汉式
+> 懒汉式不能保证单例，如何优化？
 
-## 2.饿汉式
-
-```java
-public class Singleton2 {
-    /** 引用，类加载时就创建实例 */
-    private final static Singleton2 singleton2 = new Singleton2();
-    
-    /** 1.私有构造 */
-    private Singleton2() {}
-
-    /** 2.获取实例的方法 */
-    public static Singleton2 getInstance() {
-        return singleton2;
-    }
-}
-```
-
-与懒汉式相比，**饿汉式使用空间换取时间**：即加载类字节码到虚拟机时就实例化该类对象，提前消耗内存，但没有并发问题，能保证实例唯一（类加载时由JVM创建保证）
-
-#### 虚拟机如何保证饿汉式的线程安全
-
-在编译生成class文件时，会自动产生两个方法，类的初始化方法clinit，和实例的初始化方法init
-
-| |作用|调用时机|
-|:---|:----|:--|
-|clinit方法|类的初始化方法，包括静态变量初始化语句和静态块的执行|在jvm第一次加载class文件时被调用|
-|init方法|实例的初始化方法|在创建实例时被调用，发生在new操作符、调用Class或Java.lang.reflect.Constructor对象的newInstance()、调用任何现有对象的clone()、通过java.io.ObjectInputStream类的getObject()方法反序列化时|
-
-> clinit方法是由编译器在编译期，自动收集类中的所有类变量（静态成员变量）的赋值动作和静态代码块（static{}）中的语句合并产生的。因此，private static Singleton2 singleton2 = new Singleton2();也会被放入到这个方法中
-
-类生命周期的7个阶段：【加载】【验证】【准备】【解析】【初始化】【使用】【卸载】，前5个为类加载阶段。静态成员变量singleton2的初始化语句就发生在类Singleton2类加载的初始化阶段，初始化阶段是执行类构造器clinit方法的过程。
-
-> Java虚拟机规范中没有约束何时进行第一个阶段加载，即交由虚拟机具体实现。但对初始化阶段，虚拟机规范严格规定了有且只有以下5种情况必须立即对类进行初始化（而加载、验证、准备自然需要在此之前完成）：
-> - 1.遇到new、getstatic、putstatic、invokestatic这4条字节码指令时，如果类没有进行过初始化，需要先触发其初始化。生成这4条指令的最常见场景：使用new关键字、读取或设置类静态字段（被fina修饰的静态字段除外，其已在编译期把值放入了常量池中）、调用类静态方法
-> - 2.使用java.lang.reflect包的方法对类进行反射时，如果类没有进行过初始化，需要先触发其初始化
-> - 3.初始化一个类的时候，如果其父类还没有进行初始化，由先触发其父类的初始化
-> - 4.当虚拟机启动时，用户需要指定一个执行主类（包含main()方法的那个类），虚拟机会先初始化这个主类
-> - 5.当使用JDK 1.7的动态语言支持时，如果一个java.lang.invoke.MethodHandle实例最后的解析结果REF_getstatic、REF_putStatic、REF_invokeStatic的方法句柄，并且这个方法句柄所对应的类没有进行过初始化，则需要先触发其初始化
-
-虚拟机会保证一个类的clinit方法在多线程环境中被正确的加锁、同步，如果多个线程同时去初始化一个类，那么只会有一个线程执行该类的clinit方法，其他线程阻塞，直到活动线程执行完clinit方法。其他线程虽然被阻塞，但执行clinit方法的那条线程退出clinit方法后，其他线程唤醒后不会再进入clinit方法。**同一个类加载器下，一个类只会初始化clinit一次。即private static Singleton2 singleton2 = new Singleton2()只执行了一次**
-
-
-> 如果对性能没有要求，可以使用饿汉式，简单方便。如果既要保证性能（避免消耗不需要的内存），又要线程安全，向下看...
-
-## 3.同步式
+## 2.同步懒汉式
 
 在懒汉式的基础上，只需要将getInstance()同步
 
@@ -179,7 +135,7 @@ public class Singleton3 {
 
 > **懒汉式的并发BUG，问题点在于第一次创建实例时的并发控制，而非每个时刻getInstance方法级的同步控制**
 
-## 4.DCL方式
+## 3.DCL方式
 
 DCL（double checked locking），即双重检验锁
 
@@ -219,11 +175,75 @@ JVM初始化一个对象，总的来说做了3件事情：
 
 > 该方式既能保证多线程下的单例，又有懒加载，性能上也做了优化，是近乎完美的懒汉式（后面还可以对反序列化情景下进行优化）
 
-## 5.静态内部类
+## 4.饿汉式
 
-由于静态内部类是懒加载的，所以使用静态内部类改造饿汉式。从而既能不浪费内存，又保证了线程安全
+饿汉式，与懒汉式相比，在类加载中就创建好实例，有两种变种：静态成员变量、静态代码块。
 
-> 虚拟机的机制是，如果没有访问一个类，那么不会载入该类进入虚拟机。当使用外部类的其他属性时，是不会加载内部类到内存的，也就不会浪费内存创建内部类中的单例
+```java
+public class Singleton2 {
+    /** 引用，类加载时就创建实例 */
+    private final static Singleton2 singleton2 = new Singleton2();
+    
+    /** 1.私有构造 */
+    private Singleton2() {}
+
+    /** 2.获取实例的方法 */
+    public static Singleton2 getInstance() {
+        return singleton2;
+    }
+}
+```
+
+```java
+public class Singleton2 {
+
+    private Singleton2 singleton2 = null;
+
+    static {
+        singleton2 = new Singleton2();
+    }
+    
+    /** 1.私有构造 */
+    private Singleton2() {}
+
+    /** 2.获取实例的方法 */
+    public static Singleton2 getInstance() {
+        return singleton2;
+    }
+}
+```
+
+与懒汉式相比，**饿汉式使用空间换取时间**：即加载类字节码到JVM时就实例化该类对象，提前消耗内存，没有并发问题，能保证实例唯一（类加载时的单例由JVM的类加载机制保证）
+
+#### JVM如何保证饿汉式的线程安全
+
+在编译生成class文件时，会自动产生两个方法，类的初始化方法clinit，和实例的初始化方法init
+
+| |作用|调用时机|
+|:---|:----|:--|
+|clinit方法|类的初始化方法，包括静态变量初始化语句和静态块的执行|在jvm第一次加载class文件时被调用|
+|init方法|实例的初始化方法|在创建实例时被调用，发生在new操作符、调用Class或Java.lang.reflect.Constructor对象的newInstance()、调用任何现有对象的clone()、通过java.io.ObjectInputStream类的getObject()方法反序列化时|
+
+> clinit方法是由编译器在编译期，自动收集类中的所有类变量（静态成员变量）的赋值动作和静态代码块（static{}）中的语句合并产生的。因此，private static Singleton2 singleton2 = new Singleton2();也会被放入到这个方法中
+
+类生命周期的7个阶段：【加载】【验证】【准备】【解析】【初始化】【使用】【卸载】，前5个为类加载阶段。静态成员变量singleton2的初始化语句就发生在类Singleton2类加载的初始化阶段，初始化阶段是执行类构造器clinit方法的过程。
+
+> Java虚拟机规范中没有约束何时进行第一个阶段加载，即交由虚拟机具体实现。但对初始化阶段，虚拟机规范严格规定了有且只有以下5种情况必须立即对类进行初始化（而加载、验证、准备自然需要在此之前完成）：
+> - 1.遇到new、getstatic、putstatic、invokestatic这4条字节码指令时，如果类没有进行过初始化，需要先触发其初始化。生成这4条指令的最常见场景：使用new关键字、读取或设置类静态字段（被fina修饰的静态字段除外，其已在编译期把值放入了常量池中）、调用类静态方法
+> - 2.使用java.lang.reflect包的方法对类进行反射时，如果类没有进行过初始化，需要先触发其初始化
+> - 3.初始化一个类的时候，如果其父类还没有进行初始化，由先触发其父类的初始化
+> - 4.当虚拟机启动时，用户需要指定一个执行主类（包含main()方法的那个类），虚拟机会先初始化这个主类
+> - 5.当使用JDK 1.7的动态语言支持时，如果一个java.lang.invoke.MethodHandle实例最后的解析结果REF_getstatic、REF_putStatic、REF_invokeStatic的方法句柄，并且这个方法句柄所对应的类没有进行过初始化，则需要先触发其初始化
+
+虚拟机会保证一个类的clinit方法在多线程环境中被正确的加锁、同步，如果多个线程同时去初始化一个类，那么只会有一个线程执行该类的clinit方法，其他线程阻塞，直到活动线程执行完clinit方法。其他线程虽然被阻塞，但执行clinit方法的那条线程退出clinit方法后，其他线程唤醒后不会再进入clinit方法。**同一个类加载器下，一个类只会初始化clinit一次。即private static Singleton2 singleton2 = new Singleton2()只执行了一次**
+
+> 如果对性能没有要求，可以使用饿汉式，简单方便。如果既要保证性能（不提前消耗内存），又要线程安全，向下看...
+
+## 5.饿汉式-静态内部类
+
+静态内部类是懒加载的，所以使用静态内部类改造饿汉式。既能不浪费内存，又保证了线程安全。
+
+> 虚拟机的机制是，如果没有访问一个类，那么不会载入该类进入虚拟机。当使用外部类的其他属性时，是不会加载内部类到内存的，也就不会浪费内存创建内部类中的单例。
 
 ```java
 public class Singleton5 {
@@ -242,7 +262,7 @@ public class Singleton5 {
 }
 ```
 
-以上5种方式，可分为懒汉式（2\3\4）和饿汉式（1\5），以及对两者的优化。其中【4.双重检验锁】和【5.静态内部类】能保证多线程单例和懒加载。
+以上5种方式，可分为懒汉式（1\2\3）和饿汉式（4\5），以及对两者的优化。其中【3.双重检验锁】和【5.静态内部类】能保证多线程单例和懒加载。
 
 > 上述看似完美的实现方式，在反射和反序列化时会被破坏，所以接着讨论...
 
@@ -250,7 +270,7 @@ public class Singleton5 {
 
 Java反射几乎什么事情都能做，私有的公有的都能破坏。而反序列化也很厉害，一旦实现了序列化接口，该类将不能保持单例，readObject()会返回一个新的实例。
 
-> 下面的Singleton6和Singleton5一样，使用静态内部类实现方式。然后使用反射和反序列化进行单例破坏
+> 下面的Singleton6和Singleton5一样，使用静态内部类实现。然后使用反射和反序列化进行单例破坏
 
 ```java
 public class Singleton6 implements Serializable{
@@ -271,13 +291,12 @@ public class Singleton6 implements Serializable{
 
 ```java
 /** 测试反射和反序列化破坏单例 */
-public static void main(String[] args)
-        throws IllegalAccessException, InstantiationException, IOException, ClassNotFoundException {
+public static void main(String[] args) throws IllegalAccessException, InstantiationException, IOException, ClassNotFoundException {
+    // 正常获取实例
     Singleton6 singleton6 = getInstance();
-    /* 反射获取实例 */
+    // 反射获取实例
     Singleton6 singleton6Two = Singleton6.class.newInstance();
-
-    /* 反序列化获取实例 */
+    // 反序列化获取实例
     String file = "singleton6";
     ObjectOutputStream outputStream = new ObjectOutputStream(new FileOutputStream(file));
     outputStream.writeObject(singleton6);
@@ -297,9 +316,9 @@ com.baicai.singleton.Singleton6@5fd0d5ae
 com.baicai.singleton.Singleton6@2d98a335
 ```
 
-#### 解决
+#### 解决反序列化的破坏
 
-其中反序列化可以通过**重写readResolve()**遏制，即在上述Singleton6中重写
+反序列化破坏单例，可以通过**重写readResolve()**遏制，即在上述Singleton6中重写：
 
 ```java
 /** 重写该方法，防止反序列化破坏单例 */
@@ -318,33 +337,41 @@ com.baicai.singleton.Singleton6@135fbaa4
 
 反序列化时，如果实现了serializable或externalizable接口的类中包含readResolve()方法，会直接调用readResolve()获取实例，这样就避免了反序列化破坏单例。
 
-> 到此，【4.双重检验锁】或【5.静态内部类】的方式+readResolve()是最接近完美的（除了反射场景）
+> 至此，【3.双重检验锁】或【5.静态内部类】的方式+重写readResolve()是最接近完美的（除了反射场景）
 
 ## 7.枚举方式
 
 #### 枚举
 
-- enum本质是一个final的Enum子类，即默认继承了java.lang.Enum，而非Object
+具体可参考[Enum](https://blog.wocaishiliuke.cn/javase/2018/01/19/javase_enum/)。
+
+- enum本质是一个final的Enum子类，即默认继承了java.lang.Enum（间接继承了Object）
 - 枚举类可以实现一个或多个接口
 - 枚举类的构造只能是私有的
 
 枚举可以实现单例，正是因为枚举本身的特点：
 - 本质是类，可以有成员变量、成员方法等
 - 构造都是私有的（默认或手动给出的）
-- 创建枚举默认是线程安全的（不需要DCL）
+- 创建枚举默认是线程安全的（因为是静态的）
 
 #### 实现
 
 ```java
 public enum Singleton7 {
     //实例
-    INSTANCE;
+    SINGLETON7;
 
-    //也可以省略该方法，使用Singleton7.INSTANCE访问
+    //也可以省略该方法，使用Singleton7.SINGLETON7访问
     public Singleton7 getInstance() {
-        return INSTANCE;
+        return SINGLETON7;
     }
 }
+```
+
+> 枚举值SINGLETON7就相当于：
+
+```java
+public static final Singleton7 SINGLETON7 = new Singleton7("SINGLETON7",0);
 ```
 
 通过反编译可以看出，枚举的本质就是一个继承了java.lang.Enum的final类
@@ -399,8 +426,8 @@ public final class com.baicai.singleton.Singleton7 extends java.lang.Enum<com.ba
 使用上述6中的代码进行枚举实现单例的反射和反序列化验证
 
 ```java
-public static void main(String[] args)
-        throws IllegalAccessException, InstantiationException, IOException, ClassNotFoundException {
+public static void main(String[] args) throws IllegalAccessException, InstantiationException, IOException, ClassNotFoundException {
+    // 获取枚举单例
     Singleton7 singleton7 = Singleton7.SINGLETON7;
     // 查看构造
     Constructor<?>[] constructors = Singleton7.class.getDeclaredConstructors();
@@ -435,7 +462,7 @@ Caused by: java.lang.NoSuchMethodException: com.baicai.singleton.Singleton7.<ini
 private com.baicai.singleton.Singleton7(java.lang.String,int)
 ```
 
-> 既然没有空参构造，就使用有参构造反射。结果仍然报错：**Cannot reflectively create enum objects**（不能反射创建枚举实例）
+> 既然没有空参构造，就使用有参构造反射：
 
 ```java
 /* 反射获取实例 */
@@ -447,6 +474,8 @@ constructor.setAccessible(true);
 Singleton7 singleton7Two = constructor.newInstance("test", 666);
 ```
 
+> 结果仍然报错：**Cannot reflectively create enum objects**（不能反射创建枚举实例）
+
 ```java
 Exception in thread "main" java.lang.IllegalArgumentException: Cannot reflectively create enum objects
     at java.lang.reflect.Constructor.newInstance(Constructor.java:417)
@@ -455,7 +484,7 @@ Exception in thread "main" java.lang.IllegalArgumentException: Cannot reflective
 
 > 追根溯源，查看Constructor类的newInstance()源码
 
-可以看到，反射在通过newInstance创建对象时，会检查该类是否是ENUM。**不能使用反射创建枚举实例**
+可以看到，**反射在通过newInstance创建对象时，会检查该类是否是ENUM，并禁止使用反射创建枚举实例**。
 
 ```java
 /**
@@ -492,7 +521,41 @@ public T newInstance(Object ... initargs)
 - 3.自由序列化。对于序列化和反序列化，因为每个枚举类和枚举变量在JVM中都是唯一的，Java在序列化和反序列化枚举时做了特殊的规定，枚举的writeObject、readObject、readObjectNoData、writeReplace和readResolve等方法是被编译器禁用的，因此不存在实现序列化接口后调用readObject破坏单例的情况
 - 4.可以防止反射破坏单例
 
+> 只是该类不那么"干净"，继承了Enum的成员，如name、ordinal、name()等。
 
+## 8.CAS
 
+CAS是种乐观锁技术，当多线程尝试更新同一变量时，CAS能保证只有一个线程更新成功，其他线程失败，失败的线程并不会被挂起，而是被告知失败，并可以再次尝试。
+
+```java
+public class Singleton8 {
+    private static final AtomicReference<Singleton8> INSTANCE = new AtomicReference();
+
+    private Singleton8() {}
+
+    public static Singleton8 getInstance() {
+        for (;;) {
+            Singleton8 singleton8 = INSTANCE.get();
+            if (null != singleton8)
+                return singleton8;
+
+            singleton8 = new Singleton8();
+            if (INSTANCE.compareAndSet(null, singleton8))
+                return singleton8;
+        }
+    }
+}
+```
+> for (;;)和while(true)，Java编译器都会优化成goto，即编译优化后两者效果和性能一样。但对于c语言，for语句会被编译器优化成一条汇编指令，而while会生成好几条汇编指令。
+
+> 优缺点
+
+- 优点
+    + 优于传统锁机制（如synchronized），CAS基于忙等待算法，依赖底层硬件实现，没有线程切换和阻塞带来的消耗，支持较大的并行度
+- 缺点
+    + 如果忙等待一直执行不成功（一直死循环），会增加CPU负担
+    + 当很多线程同时执行到new Singleton8()时，会创建很多对象，容易溢出
+
+不建议CAS方式。
 
 
