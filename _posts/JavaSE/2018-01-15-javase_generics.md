@@ -189,7 +189,7 @@ public class Box<T> {
 
 ## 4.泛型类的继承
 
-#### 4.1 Box<S>和Box<T>
+#### 4.1 继承
 
 Integer是Number的子类，但是Box<Integer>并不是Box<Number>的子类，也就不能把Boxr<Integer>对象赋值给Box<Number>类型的引用。即无论S和T是什么关系，Box<S>和Box<T>都是没有联系的。
 
