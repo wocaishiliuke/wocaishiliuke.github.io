@@ -1,13 +1,13 @@
 ---
 title: 编码
-date: 2018-01-18 00:00:00
+date: 2018-01-17 00:00:00
 categories:
     - JavaSE
 tags:
     - JavaSE
 ---
 
-本文以[字符编码笔记：ASCII，Unicode 和 UTF-8](http://www.ruanyifeng.com/blog/2007/10/ascii_unicode_and_utf-8.html)为基础，记录编码的相关知识。
+本文记录编码的相关知识。
 <!-- more -->
 
 ##### 目录
