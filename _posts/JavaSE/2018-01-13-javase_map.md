@@ -2398,3 +2398,5 @@ static <K,V> TreeMap.Entry<K,V> successor(Entry<K,V> t) {
 
 - [Java编程拾遗『TreeMap』](http://lidol.top/java/detail/986/)
 - [关于HashMap容量的初始化，还有这么多学问。](https://www.hollischuang.com/archives/2431)
+- [全网把Map中的hash()分析的最透彻的文章，别无二家。](http://www.hollischuang.com/archives/2091)
+- [HashMap中傻傻分不清楚的那些概念](http://www.hollischuang.com/archives/2416)
