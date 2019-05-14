@@ -311,6 +311,45 @@ final void putMapEntries(Map<? extends K, ? extends V> m, boolean evict) {
 
 构造4中有put操作，所以也是在第一次执行putVal()时调用resize()，创建table（确定数组长度）和指定threshold。
 
+#### 3.6 tableSizeFor
+
+JDK1.8的新方法，对应JDK1.7中的roundUpToPowerOf2()（实际也是位操作实现的Integer.highestOneBit()）。**使用无符号右移和位或运算大大提升了效率**。
+
+```java
+//返回≥cap的、最小的、2的整数次幂
+static final int tableSizeFor(int cap) {
+    int n = cap - 1;
+    n |= n >>> 1;
+    n |= n >>> 2;
+    n |= n >>> 4;
+    n |= n >>> 8;
+    n |= n >>> 16;
+    return (n < 0) ? 1 : (n >= MAXIMUM_CAPACITY) ? MAXIMUM_CAPACITY : n + 1;
+}
+```
+
+> 思路
+
+找到cap二进制形式中最高位的1的位置，将之后的所有位都置为1，然后加1，就是最接近的2的幂。如5的最接近的2的幂是8，19-->32，9-->16，37-->64。
+
+![avatar](https://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/JavaSE/collection/hashmap_tableSizeFor.png)
+
+举例：计算≥3276（1100 1100 1100）的、最小的、2的整数次幂。套用上述公式（无符号右移+位或运算）
+
+```
+1100 1100 1100 >>>1 = 0110 0110 0110
+1100 1100 1100 | 0110 0110 0110 = 1110 1110 1110
+1110 1110 1110 >>>2 = 0011 1011 1011
+1110 1110 1110 | 0011 1011 1011 = 1111 1111 1111
+1111 1111 1111 >>>4 = 1111 1111 1111
+1111 1111 1111 | 1111 1111 1111 = 1111 1111 1111
+```
+
+通过几次无符号右移和位或运算，1100 1100 1100转换成了1111 1111 1111，再加1，得到1 0000 0000 0000（4096），就是要计算的值。
+
+> 为何先cap-1
+
+有一种特殊情况，即cap本身就是2的幂。比如4，如果直接位移和异或会得到8，所以要先cap-1。
 
 ## 4.put(K key, V value)
 
@@ -2358,3 +2397,4 @@ static <K,V> TreeMap.Entry<K,V> successor(Entry<K,V> t) {
 # VI.参考
 
 - [Java编程拾遗『TreeMap』](http://lidol.top/java/detail/986/)
+- [关于HashMap容量的初始化，还有这么多学问。](https://www.hollischuang.com/archives/2431)
