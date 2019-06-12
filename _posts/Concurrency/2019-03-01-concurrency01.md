@@ -23,8 +23,11 @@ tags:
 
 # I.并发概述
 
+- 并发：多任务交替切换执行
+- 并行：多任务同时执行（多核CPU）
+
 ## 1.并发优点
-- 充分发挥多核CPU的计算能力（硬件设计者将摩尔定律的责任推给了软件开发者）
+- 充分发挥CPU的高效运算能力
 - 方便业务拆分，提升应用性能
 
 ## 2.并发缺点
@@ -42,49 +45,79 @@ tags:
 
 #### 2.2 线程安全
 
-线程安全，通俗的说，在多线程下代码执行的结果与预期正确的结果一致。否则就是线程不安全的。如脏读（即共享数据线程间的可见性问题，如DCL中指令重排的坑）、死锁等
+线程安全，通俗的说，在多线程下代码执行的结果与预期正确的结果一致。否则就是线程不安全的，如出现脏读（即线程间共享数据的可见性问题，如DCL中指令重排的坑）、死锁等
 
-> 扩展：避免死锁的方式
+> 避免死锁的方式
 
 - 避免一个线程同时获得多个锁
 - 避免一个线程在锁内部占有多个资源，尽量保证每个锁只占用一个资源
 - 尝试使用定时锁，lock.tryLock(timeOut)，当超时等待时当前线程不会阻塞
 - 对于数据库锁，加锁和解锁必须在一个数据库连接里，否则会出现解锁失败的情况
+- 加锁解锁按优先级
 
 ## 3.并发中的概念
 
 - 同步：必须等待当前被调用方法执行结束，才能执行后续代码
 - 异步：在当前被调用方法未完成时，也可以调用后续代码
 
-- 并发：多任务交替切换执行
-- 并行：多任务同时执行（多核CPU）
-
 - 阻塞：一个线程占用了临界区资源（共享资源），其他线程必须等待资源的释放，才能访问
 - 非阻塞：多个线程可以同时访问某资源
 
 - 临界区：共享数据，可被多线程使用。但某线程占用时，其他线程必须等待
+
+## 4.上下文切换
+
+一个CPU内核在任意时刻只能被一个线程使用。一般线程数会大于CPU核数，为了让这些线程都能够及时地执行，以及充分使用CPU的计算，CPU采取为每个线程分配时间片并轮转的策略。当一个线程的时间片用完时，就会保存当前的执行状态，并重新处于就绪状态，让出CPU给其他线程使用，该过程就是上下文切换。
+
+每次切换都需要纳秒级的时间，频繁的切换对系统来说会消耗大量的CPU时间。
+
+## 5.死锁
+
+线程A持有锁1，线程B持有锁2，此时如果两个线程都想获得对方的锁资源，就会互相一直等待，出现死锁。
 
 
 ---
 
 # II.线程概述
 
-Java程序本身就是一个多线程程序，包括了：
+## 1.进程和线程
 
-- main线程（程序入口）
-- 分发处理发送信号到JVM的线程
-- 调用对象finaliz()的线程
-- 清除Reference的线程
+**进程（process）**是程序的一次执行过程，是系统运行程序的基本单位。系统运行一个程序就代表着一个进程从创建、运行到消亡的过程。启动main函数时其实就是启动了一个JVM的进程，而main()所在的线程就是该java进程中的一个线程，称为主线程。
 
-## 1.线程的创建
+**线程（thread）**与进程相似，但线程是比进程更小的执行单位。一个进程在其执行的过程中可以产生多个线程。由于多线程共享java进程的堆和方法区资源，尽管每个线程也有独立的程序计数器、虚拟机栈和本地方法栈，线程间的切换负担还是要比进程切换小得多。线程也被称为轻量级进程。
 
-3种方式
-
-## 1.1 继承Thread类，重写run()
-
-有单继承的弊端
+> Java程序本身就是一个多线程程序：
 
 ```java
+// 查看该java进程的线程
+public static void main(String[] args) {
+    // 获取Java线程管理MXBean
+    ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
+    // 不需要获取同步的 monitor 和 synchronizer 信息，仅获取线程和线程堆栈信息
+    ThreadInfo[] threadInfos = threadMXBean.dumpAllThreads(false, false);
+    // 遍历线程信息，仅打印线程 ID 和线程名称信息
+    for (ThreadInfo threadInfo : threadInfos) {
+        System.out.println("[" + threadInfo.getThreadId() + "] " + threadInfo.getThreadName());
+    }
+}
+```
+```
+[5] Monitor Ctrl-Break
+[4] Signal Dispatcher   // 分发处理给JVM信号的线程
+[3] Finalizer           // 调用对象finalize()的线程
+[2] Reference Handler   // 清除reference的线程
+[1] main                // 主线程，程序入口
+```
+
+
+## 2.线程的创建
+
+- 方式1：继承Thread类，重写run()，有单继承的弊端
+- 方式2：实现Runnable接口，最常用
+- 方式3：实现Callable接口
+
+```java
+// 第一种
 Thread thread = new Thread() {
     @Override
     public void run() {
@@ -93,13 +126,8 @@ Thread thread = new Thread() {
     }
 };
 thread.start();
-```
 
-## 1.2 实现Runnable接口
-
-最常用
-
-```java
+// 第二种
 Thread thread = new Thread(new Runnable() {
     @Override
     public void run() {
@@ -107,11 +135,8 @@ Thread thread = new Thread(new Runnable() {
    }
 });
 thread.start();
-```
 
-## 1.3 实现Callable接口
-
-```java
+// 第三种
 ExecutorService service = Executors.newSingleThreadExecutor();
 Future<String> future = service.submit(new Callable() {
     @Override
@@ -127,26 +152,47 @@ try {
 }
 ```
 
-## 2.线程的生命周期
+> 为什么调用start()会执行run()，为什么不直接调用run()？
 
-即线程的状态，和生命周期（转换）方法（参考图更清晰）
+因为新建状态的thread需要先调用start()，进入就绪状态（Runnable），当分配到时间片后就可以开始运行了。start()会执行一些准备工作，然后再自动执行run()。
 
-- NEW：初始状态。初始化后，还未调用Thread.start()
-- RUNNABLE：运行状态。涵盖操作系统中的就绪（READY）和运行（RUNNING）两种状态
-- BLOCKED：阻塞状态。阻塞于锁
-- WAITING：等待状态。等待其他线程做出一些动作（通知或中断）
-- TIME_WAITING：超时等待状态。不同于WAITING，可在指定时间自行返回
-- TERMINATED：终止状态。表示线程已执行完毕
+如果直接执行run()方法，会把run()当成一个main线程下的普通方法去执行，并不会在thread线程中执行。
 
-## 3.常用的线程操作
+## 3.线程的生命周期
 
-#### 3.1 interrupted
+即线程的6个状态，和生命周期（转换）方法（参考图更清晰）
 
-中断可以理解为线程的一个标志位，表示一个运行中的线程是否被其他线程进行了中断操作.
+|状态|状态名|说明|
+|:--|:----|:---|
+|NEW|初始状态|初始化后，还未调用Thread.start()|
+|RUNNABLE|运行状态|涵盖操作系统中的就绪（READY）和运行（RUNNING）两种状态|
+|BLOCKED|阻塞状态|阻塞于锁|
+|WAITING|等待状态|等待其他线程做出一些动作（通知或中断）|
+|TIME_WAITING|超时等待状态|不同于WAITING，可在指定时间自行返回|
+|TERMINATED|终止状态|表示线程已执行完毕|
 
-中断好比其他线程对该线程打了个招呼。其他线程可以调用该线程的interrupt()对其进行中断操作，同时该线程可以调用isInterrupted()来感知其他线程对自身的中断操作，从而做出响应。另外，同样可以调用Thread.interrupted()对当前线程进行中断，该方法会清除中断标志位。
+![avatar](https://blog-wocaishiliuke.oss-cn-shanghai.aliyuncs.com/images/Concurrency/thread_status.png)
 
-在该线程执行了Object.wait()、Object.wait(long)、sleep(long)、join()、join(long)时，对其中断，会抛InterruptedException，同时会清空中断标志位。
+- 线程被创建后处于NEW（新建状态）
+- 调用start()后处于READY（可运行状态）
+- 当获得了CPU时间片（timeslice）后处于RUNNING（运行状态）
+- 如果执行wait()等，该线程会进入WAITING（等待状态），需要其他线程的通知才能返回到运行状态
+- 如果执行wait(long millis)等，该线程会进入TIME_WAITING（超时等待状态），相当于在WAITING状态的基础上增加了超时限制，到达超时时间后线程将返回到RUNNABLE状态
+- 在调用synchronzied方法时，如果没有获取到锁，该线程会进入BLOCKED（阻塞状态）
+- 当run()或main()执行完后，该线程会进入TERMINATED（终止状态）
+- 已终止的线程不能复生，如果再调用start()，抛IllegalThreadStateException
+
+## 4.常见线程操作
+
+Thread类中的常用API。
+
+#### 4.1 interrupt
+
+其他线程可以调用该线程的interrupt()对其进行中断操作，同时该线程可以调用isInterrupted()或interrupted()来感知其他线程对自身的中断操作，从而做出响应。
+
+中断好比其他线程对该线程打了个招呼，体现在线程的中断标志位上。因此，中断操作可以看做是线程间的一种简单交互。一般在结束线程时通过中断标志位去清理资源，相比于直接结束线程更安全优雅。
+
+在该线程执行了Object.wait()、Object.wait(long)、sleep(long)、join()、join(long)后，对其中断，会抛InterruptedException，同时会清空中断标志位。
 
 ```java
 public static void main(String[] args) {
@@ -173,14 +219,11 @@ public static void main(String[] args) {
     busyThread.start();
     sleepThread.interrupt();
     busyThread.interrupt();
-    while (sleepThread.isInterrupted()) ;
+    while (sleepThread.isInterrupted());
     System.out.println("sleepThread isInterrupted: " + sleepThread.isInterrupted());
     System.out.println("busyThread isInterrupted: " + busyThread.isInterrupted());
 }
 ```
-
-输出：
-
 ```
 sleepThread isInterrupted: false
 busyThread isInterrupted: true
@@ -189,11 +232,9 @@ java.lang.InterruptedException: sleep interrupted
     at com.baicai.thread.InterruptDemo$1.run(InterruptDemo.java:10)
 ```
 
-> 开启sleepThread和BusyThread后，sleepThread睡眠1s，busyThread执行死循环。然后分别对两个线程进行中断操作，sleepThread抛出InterruptedException后清除标志位，而busyThread不会清除标志位。while (sleepThread.isInterrupted()) ;是在main进程中监测sleepThread，一旦sleepThread的中断标志位清零，Main线程才会继续往下执行。因此，中断操作可以看做线程间一种简便的交互方式。一般在结束线程时通过中断标志位或者标志位去清理资源，相对于武断而直接的结束线程，这种方式要优雅安全。
+> 开启sleepThread和BusyThread后，sleepThread睡眠1s，busyThread执行死循环。然后分别对两个线程进行中断操作，sleepThread抛出InterruptedException后清除标志位，而busyThread不会清除标志位。while (sleepThread.isInterrupted());是在main线程中监测sleepThread线程，一旦sleepThread的中断标志位清零，Main线程才会继续往下执行。
 
-#### 3.2 join
-
-是线程间协作的一种方式。如果线程A执行了threadB.join()，意味着，当前线程A会等待线程B终止后才继续执行。join一共提供了如下方法:
+#### 4.2 join
 
 ```java
 public final synchronized void join(long millis)
@@ -201,17 +242,19 @@ public final synchronized void join(long millis, int nanos)
 public final void join() throws InterruptedException
 ```
 
-其中join()的逻辑是：
+线程间协作的一种方式。如果线程A执行了B.join()，线程A会一直处于WAITING状态，直到线程B终止后才继续执行。
 
 ```java
+// join()的底层实现
 while (isAlive()) {
     wait(0);
 }
 ```
 
-如上，当前threadA会一直阻塞，直到threadB结束后即isAlive()返回false，才会结束while循环。当threadB退出时会调用notifyAll()通知所有等待的线程。
+线程B结束，即isAlive()返回false，才会结束while循环。线程B退出时会调用notifyAll()通知所有等待的线程。
 
 ```java
+// 嵌套join，每个线程都会等待前一个线程结束再继续运行
 public class JoinDemo {
     public static void main(String[] args) {
         Thread previousThread = Thread.currentThread();
@@ -240,9 +283,6 @@ public class JoinDemo {
     }
 }
 ```
-
-上例输出（每个线程都会等待前一个线程结束才会继续运行）：
-
 ```
 main terminated.
 Thread-0 terminated.
@@ -256,40 +296,37 @@ Thread-7 terminated.
 Thread-8 terminated.
 ```
 
-#### 3.3 sleep
+#### 4.3 sleep
 
-Thread类的静态方法，让当前线程按照指定时间休眠。如果当前线程获得了锁，sleep()并不会失去锁。
+Thread的静态本地方法，按指定时间休眠当前线程。如果当前线程获得了锁，**sleep()并不会失去已获得的锁**。
 
 ```java
 public static native void sleep(long millis)
 ```
 
-> sleep()和wait()的区别：
+> sleep()和wait()都可以暂停线程的执行，区别在于：
 
-- sleep()是Thread的静态方法。wait是Object的非静态方法
-- wait()必须在同步方法或同步块中调用，也就是必须已经获得对象锁。sleep()可以在任何地方使用
-- wait()会释放占有的对象锁，使得该线程进入等待池中，等待下一次获取资源。sleep()只会让出CPU，并不会释放掉对象锁
-- sleep()在休眠时间达到后，如果再次获得CPU时间片会继续执行。wait()必须等待Object.notify()或Object.notifyAll()通知后，才会离开等待池，并且再次获得CPU时间片才会继续执行。
+- sleep()是Thread的方法；wait是Object的方法（Thread也继承了）
+- wait()必须在同步方法或同步块中调用，也就是必须先获得该对象的锁；sleep()可以在任何地方使用
+- **wait()会释放占有的锁，该线程会进入等待池，等待通知。sleep()只会让出CPU，并不会释放锁**
+- sleep()在休眠时间达到后会自动苏醒，如果再次获得时间片会继续执行。wait()必须等待Object.notify()或Object.notifyAll()通知后，才会离开等待池，并且再次获得CPU时间片后才会继续执行
 
-#### 3.4 yield
+wait()通常被用于线程间的交互和通信，sleep()通常仅用于暂停线程。
 
-Thread类的静态方法，使当前线程让出CPU
+#### 4.4 yield
+
+Thread的静态方法，使当前线程让出CPU
 
 ```java
 public static native void yield();
 ```
 
-- 1.让出CPU不代表当前线程不再运行，如果在下次竞争中又获得了时间片，会继续运行
-- 2.让出的时间片只会分配给与当前线程相同优先级的线程
+- 让出CPU不代表当前线程不再运行，如果在下次竞争中又获得了时间片，会继续运行
+- 让出的时间片只会分配给与当前线程相同优先级的线程
 
-sleep()和yield()，都会让当前线程会交出CPU资源。不同的是：sleep()交出来的时间片其他线程都可以去竞争，yield()只允许与当前线程具有相同优先级的线程竞争。
+sleep()和yield()，都会让当前线程会交出CPU资源。不同的是，sleep()交出来的时间片其他线程都可以去竞争，yield()只允许与当前线程具有相同优先级的线程竞争。
 
-> 关于线程优先级
-
-操作系统会分出一个个时间片，线程会分配到若干时间片，当前时间片用完后就会发生线程调度，并等待这下次分配。线程分配到的时间多少也就决定了线程使用处理器资源的多少，而线程优先级就是决定线程需要或多或少分配一些处理器资源的线程属性。
-在Java中，通过一个整型成员变量Priority来控制优先级，范围1~10，默认值5。创建线程时可以通过setPriority(int)进行设置，**优先级高的线程相较于优先级低的线程，会优先获得CPU时间片。需要注意的是，在不同JVM和操作系统上，线程规划存在差异，有些操作系统甚至会忽略线程优先级的设定。
-
-## 4.守护线程
+## 5.守护线程
 
 系统的守护者，在后台默默守护一些系统服务，如垃圾回收线程、JIT线程等。与用户线程对应。当用户线程完全结束后，守护线程也会退出。
 
@@ -322,6 +359,12 @@ public class DaemonDemo {
     }
 }
 ```
+
+## 6.线程优先级
+
+操作系统会分出一个个时间片，线程会分配到若干时间片，当前时间片用完后就会发生线程调度，并等待这下次分配。线程分配到的时间多少也就决定了线程占用处理器资源的多少，而线程优先级就是决定线程占用处理器资源比例的属性。
+
+在Java中，通过一个整型成员变量Priority来控制优先级，范围1~10，默认值5。创建线程时可以通过setPriority(int)进行设置，**优先级高的线程相较于优先级低的线程，会优先获得CPU时间片**。需要注意的是，在不同JVM和操作系统上，线程规划存在差异，有些操作系统甚至会忽略线程优先级的设定。
 
 
 ---
